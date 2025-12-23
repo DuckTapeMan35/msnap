@@ -1,5 +1,5 @@
-output_dir="${ini[output_dir]:-${args[--output]:-$HOME/Pictures/Screenshots}}"
-filename_pattern="${ini[filename_pattern]:-${args[--filename]:-%Y%m%d%H%M%S.png}}"
+output_dir="${args[--output]:-${ini[output_dir]:-$HOME/Pictures/Screenshots}}"
+filename_pattern="${args[--filename]:-${ini[filename_pattern]:-%Y%m%d%H%M%S.png}}"
 filename="$(date +"$filename_pattern")"
 filepath="$output_dir/$filename"
 mkdir -p "$output_dir"
