@@ -59,6 +59,11 @@ Optional:
 
 ---
 
+## Installation
+```sh
+curl -fsSL https://raw.githubusercontent.com/atheeq-rhxn/mango-utils/main/install.sh | sh
+```
+
 ## Usage
 
 ### `mcast`
