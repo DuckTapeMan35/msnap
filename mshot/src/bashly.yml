@@ -6,9 +6,9 @@ flags:
 - long: --region
   short: -r
   help: Take screenshot of selected region
-- long: --cursor
-  short: -c
-  help: Include cursor in screenshot
+- long: --pointer
+  short: -p
+  help: Include pointer in screenshot
 - long: --output
   short: -o
   arg: directory

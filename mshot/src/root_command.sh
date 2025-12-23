@@ -4,16 +4,16 @@ filename="$(date +"$filename_pattern")"
 filepath="$output_dir/$filename"
 mkdir -p "$output_dir"
 cmd="still"
-cursor_default="${ini[cursor_default]:-false}"
-cursor_enabled=false
-if [[ $cursor_default == true ]] || [[ ${args[--cursor]} ]]; then
-  cursor_enabled=true
+pointer_default="${ini[pointer_default]:-false}"
+pointer_enabled=false
+if [[ $pointer_default == true ]] || [[ ${args[--pointer]} ]]; then
+  pointer_enabled=true
 fi
 window_capture=false
 if [[ ${args[--window]} ]]; then
   window_capture=true
 fi
-if [[ $cursor_enabled == true ]]; then
+if [[ $pointer_enabled == true ]]; then
   cmd="$cmd -p"
 fi
 cmd="$cmd -c 'grim"
