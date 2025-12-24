@@ -13,7 +13,7 @@ Utilities that interact with **mango IPC (mmsg)** to provide a better experience
 ### `mcast`
 
 * **Required**:
-  - One of: `wf-recorder`, `wl-screenrec`, `gpu-screen-recorder`
+  - One of: `wf-recorder(default)`, `wl-screenrec`, `gpu-screen-recorder`
   - `slurp`
   - `notify-send`
 
