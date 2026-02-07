@@ -16,11 +16,7 @@
       {
         "title": "mutil",
         "width": 320,
-        "height": 240,
-        "minWidth": 320,
-        "minHeight": 240,
-        "maxWidth": 320,
-        "maxHeight": 290,
+        "height": 200,
         "decorations": false,
         "resizable": false,
         "fullscreen": false,
