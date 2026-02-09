@@ -1,10 +1,11 @@
 import Quickshell
 import Quickshell.Wayland
+import Quickshell.Io
 import QtQuick
 import QtQuick.Layouts
 
 // Screenshot tool popup for quickshell
-// Integrates with mango-utils/mshot for capture functionality
+// Integrates with mango-utils/mshot and mcast for capture functionality
 PanelWindow {
   id: root
 
@@ -39,6 +40,34 @@ PanelWindow {
   onCaptureModeChanged: isRegionSelected = false
   onIsScreenshotModeChanged: isRegionSelected = false
 
+  // ===== RECORDING STATE =====
+  property bool isRecordingActive: false
+
+  // FileView to watch recording status via PID file
+  FileView {
+    id: recordingPidFile
+    path: "/tmp/mcast.pid"
+    watchChanges: true
+    printErrors: false
+    
+    onLoaded: {
+      // PID file exists - recording is active
+      isRecordingActive = true
+    }
+    
+    onLoadFailed: {
+      // PID file doesn't exist - recording stopped
+      if (isRecordingActive) {
+        isRecordingActive = false
+        // If main panel is hidden, quit the shell entirely after a short delay
+        // to allow mcast to send the notification
+        if (!root.visible) {
+          quitTimer.start()
+        }
+      }
+    }
+  }
+
   // ===== THEME =====
   readonly property color bgColor: "#1a1b26"
   readonly property color surfaceColor: "#24283b"
@@ -54,36 +83,79 @@ PanelWindow {
   }
 
   function executeAction() {
-    if (!isScreenshotMode) {
-      close()
+    // Common workflow for both screenshot and recording:
+    // Region mode requires two steps: select region → execute
+    // Window and Screen modes execute directly
+
+    if (captureMode === "region" && !isRegionSelected) {
+      // Step 1: Open region selector (for both modes)
+      root.visible = false
+      regionSelector.open()
       return
     }
 
-    // Region mode: two-step process
-    if (captureMode === "region") {
-      if (!isRegionSelected) {
-        // Step 1: Open region selector
-        root.visible = false
-        regionSelector.open()
-        return
-      } else {
-        // Step 2: Execute with selected region
-        var geometry = selectedX + "," + selectedY + " " + selectedWidth + "x" + selectedHeight
-        Quickshell.execDetached(["mshot", "-r", "-g", geometry])
-        close()
-        return
-      }
+    // Step 2: Execute the actual capture/recording
+    if (isScreenshotMode) {
+      executeScreenshot()
+    } else {
+      executeRecording()
     }
+  }
 
-    // Window and Screen modes: direct execution
+  function executeScreenshot() {
     var args = ["mshot"]
-    if (captureMode === "window") {
+
+    if (captureMode === "region" && isRegionSelected) {
+      // Use -g with pre-selected geometry
+      args.push("-g")
+      args.push(selectedX + "," + selectedY + " " + selectedWidth + "x" + selectedHeight)
+    } else if (captureMode === "window") {
       args.push("-w")
     }
-    // screen mode: no args needed
+    // screen mode: no additional args needed
 
     Quickshell.execDetached(args)
     close()
+  }
+
+  function executeRecording() {
+    // Start recording with the selected mode
+    var args = ["mcast", "--toggle"]
+
+    if (captureMode === "region" && isRegionSelected) {
+      // Use -g with pre-selected geometry
+      args.push("-g")
+      args.push(selectedX + "," + selectedY + " " + selectedWidth + "x" + selectedHeight)
+    } else if (captureMode === "window") {
+      args.push("-w")
+    }
+    // screen mode: no additional args needed
+
+    Quickshell.execDetached(args)
+    isRecordingActive = true
+    
+    // Hide the main panel but keep shell running for the indicator
+    root.visible = false
+  }
+
+  function stopRecording() {
+    Quickshell.execDetached(["mcast", "--toggle"])
+    isRecordingActive = false
+    
+    // If main panel is hidden, quit the shell entirely after a short delay
+    // to allow mcast to send the notification
+    if (!root.visible) {
+      quitTimer.start()
+    }
+  }
+
+  // Timer to delay quitting so mcast can show the notification
+  Timer {
+    id: quitTimer
+    interval: 500
+    running: false
+    repeat: false
+    onTriggered: Qt.quit()
   }
 
   // ===== REGION SELECTOR =====
@@ -102,12 +174,139 @@ PanelWindow {
 
     // When user cancels (Esc or right-click in RegionSelector)
     onCancelled: {
-      // Option A: restore shell panel and keep tool open:
+      // Restore shell panel and keep tool open
       root.visible = true
+    }
+  }
 
-      // If you instead want Esc in the selector to abort the whole tool,
-      // replace the above line with:
-      // root.close()
+  // ===== RECORDING INDICATOR =====
+  PanelWindow {
+    id: recordingIndicator
+
+    screen: Quickshell.screens[0]
+
+    anchors.top: true
+    anchors.right: true
+
+    visible: isRecordingActive
+    color: "transparent"
+
+    // Fixed size - positioned with margin
+    implicitWidth: 80
+    implicitHeight: 100
+
+    // Layer shell configuration
+    WlrLayershell.layer: WlrLayer.Top
+    WlrLayershell.keyboardFocus: WlrKeyboardFocus.OnDemand
+    WlrLayershell.namespace: "recording-indicator"
+    WlrLayershell.exclusionMode: ExclusionMode.Ignore
+
+    // Indicator width properties
+    property int indicatorMinWidth: 6
+    property int indicatorExpandedWidth: 56
+    property bool isHovered: false
+
+    // Container for the indicator bar with margins
+    Item {
+      id: indicatorContainer
+      anchors.fill: parent
+      anchors.topMargin: 40
+      anchors.rightMargin: 16
+      focus: true
+
+      Keys.onPressed: (event) => {
+        if (event.key === Qt.Key_Escape) {
+          root.stopRecording()
+          event.accepted = true
+        }
+      }
+
+      Component.onCompleted: {
+        if (visible) forceActiveFocus()
+      }
+
+      onVisibleChanged: {
+        if (visible) forceActiveFocus()
+      }
+
+      // Mouse area for hover detection - cover the whole container
+      MouseArea {
+        id: hoverArea
+        anchors.fill: parent
+        hoverEnabled: true
+
+        onEntered: {
+          recordingIndicator.isHovered = true
+        }
+        onExited: {
+          recordingIndicator.isHovered = false
+        }
+        onClicked: root.stopRecording()
+      }
+
+      // Vertical bar on right side
+      Rectangle {
+        id: indicatorBar
+        anchors.right: parent.right
+        anchors.verticalCenter: parent.verticalCenter
+        width: recordingIndicator.isHovered ? recordingIndicator.indicatorExpandedWidth : recordingIndicator.indicatorMinWidth
+        height: recordingIndicator.isHovered ? 56 : 40
+        radius: recordingIndicator.isHovered ? 8 : 3
+        color: "#f7768e"  // Red/pink accent color
+
+        Behavior on width {
+          NumberAnimation { duration: 200; easing.type: Easing.OutCubic }
+        }
+
+        Behavior on height {
+          NumberAnimation { duration: 200; easing.type: Easing.OutCubic }
+        }
+
+        Behavior on radius {
+          NumberAnimation { duration: 200; easing.type: Easing.OutCubic }
+        }
+
+        // Stop button that appears on hover
+        Rectangle {
+          id: stopButton
+          anchors.centerIn: parent
+          width: 32
+          height: 32
+          radius: 6
+          color: "#24283b"
+          border.width: 2
+          border.color: "#f7768e"
+          opacity: recordingIndicator.isHovered ? 1.0 : 0.0
+          visible: opacity > 0.01
+
+          Behavior on opacity {
+            NumberAnimation { duration: 150 }
+          }
+
+          // Stop icon - centered square
+          Rectangle {
+            anchors.centerIn: parent
+            width: 14
+            height: 14
+            color: "#f7768e"
+            radius: 2
+          }
+
+          MouseArea {
+            anchors.fill: parent
+            cursorShape: Qt.PointingHandCursor
+            onClicked: root.stopRecording()
+          }
+        }
+
+        // Subtle pulsing effect when not hovered
+        SequentialAnimation on opacity {
+          running: !recordingIndicator.isHovered && recordingIndicator.visible
+          loops: Animation.Infinite
+          NumberAnimation { to: 0.7; duration: 1000; easing.type: Easing.InOutQuad }
+          NumberAnimation { to: 1.0; duration: 1000; easing.type: Easing.InOutQuad }
+        }
+      }
     }
   }
 
@@ -363,9 +562,14 @@ PanelWindow {
 
               Text {
                 text: {
-                  if (!isScreenshotMode) return "Start Recording"
-                  if (captureMode === "region" && !isRegionSelected) return "Select Region"
-                  return "Capture"
+                  // Show appropriate button text based on state
+                  if (captureMode === "region" && !isRegionSelected) {
+                    return "Select Region"
+                  }
+                  if (isScreenshotMode) {
+                    return "Capture"
+                  }
+                  return "Start Recording"
                 }
                 color: bgColor
                 font.pixelSize: 12
