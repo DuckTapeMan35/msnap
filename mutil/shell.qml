@@ -76,6 +76,9 @@ PanelWindow {
   readonly property color textMuted: "#565f89"
   readonly property color borderColor: "#414868"
 
+  // ===== PATHS =====
+  readonly property string homePath: Quickshell.env("HOME")
+
   // ===== FUNCTIONS =====
   function close() {
     visible = false
@@ -103,7 +106,7 @@ PanelWindow {
   }
 
   function executeScreenshot() {
-    var args = ["mshot"]
+    var args = [homePath + "/.local/bin/mshot"]
 
     if (captureMode === "region" && isRegionSelected) {
       // Use -g with pre-selected geometry
@@ -120,7 +123,7 @@ PanelWindow {
 
   function executeRecording() {
     // Start recording with the selected mode
-    var args = ["mcast", "--toggle"]
+    var args = [homePath + "/.local/bin/mcast", "--toggle"]
 
     if (captureMode === "region" && isRegionSelected) {
       // Use -g with pre-selected geometry
@@ -139,7 +142,7 @@ PanelWindow {
   }
 
   function stopRecording() {
-    Quickshell.execDetached(["mcast", "--toggle"])
+    Quickshell.execDetached([homePath + "/.local/bin/mcast", "--toggle"])
     isRecordingActive = false
     
     // If main panel is hidden, quit the shell entirely after a short delay
