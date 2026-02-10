@@ -28,6 +28,7 @@ PanelWindow {
   // ===== STATE =====
   property bool isScreenshotMode: true
   property string captureMode: "region"
+  property bool includePointer: false
 
   // Region selection state
   property bool isRegionSelected: false
@@ -122,6 +123,11 @@ PanelWindow {
       args.push("-w")
     }
     // screen mode: no additional args needed
+
+    // Add pointer flag if enabled
+    if (includePointer) {
+      args.push("-p")
+    }
 
     Quickshell.execDetached(args)
     close()
@@ -559,44 +565,79 @@ PanelWindow {
             font.bold: true
           }
 
-          // Action Button - matching mutil sizing
-          Rectangle {
+          // Action Button Row - Capture/Record + Pointer Toggle
+          RowLayout {
             Layout.alignment: Qt.AlignHCenter
-            Layout.preferredWidth: 244
-            Layout.preferredHeight: 36
-            color: accentColor
-            radius: 8
+            spacing: 6
 
-            RowLayout {
-              anchors.centerIn: parent
-              spacing: 8
+            // Action Button - Capture/Record
+            Rectangle {
+              id: actionButton
+              Layout.preferredWidth: 194
+              Layout.preferredHeight: 36
+              color: accentColor
+              radius: 8
 
-              Text {
-                text: isScreenshotMode ? "◉" : "⏺"
-                color: bgColor
-                font.pixelSize: 16
+              RowLayout {
+                anchors.centerIn: parent
+                spacing: 8
+
+                Text {
+                  text: isScreenshotMode ? "◉" : "⏺"
+                  color: bgColor
+                  font.pixelSize: 16
+                }
+
+                Text {
+                  text: {
+                    // Show appropriate button text based on state
+                    if (captureMode === "region" && !isRegionSelected) {
+                      return "Select Region"
+                    }
+                    if (isScreenshotMode) {
+                      return "Capture"
+                    }
+                    return "Start Recording"
+                  }
+                  color: bgColor
+                  font.pixelSize: 12
+                  font.bold: true
+                }
               }
 
-              Text {
-                text: {
-                  // Show appropriate button text based on state
-                  if (captureMode === "region" && !isRegionSelected) {
-                    return "Select Region"
-                  }
-                  if (isScreenshotMode) {
-                    return "Capture"
-                  }
-                  return "Start Recording"
-                }
-                color: bgColor
-                font.pixelSize: 12
-                font.bold: true
+              MouseArea {
+                anchors.fill: parent
+                onClicked: executeAction()
               }
             }
 
-            MouseArea {
-              anchors.fill: parent
-              onClicked: executeAction()
+            // Pointer Toggle Button (screenshot mode only)
+            Rectangle {
+              id: pointerToggleButton
+              Layout.preferredWidth: isScreenshotMode ? 44 : 0
+              Layout.preferredHeight: 36
+              visible: isScreenshotMode
+              color: includePointer ? Qt.rgba(accentColor.r, accentColor.g, accentColor.b, 0.15) : surfaceColor
+              radius: 8
+              border.width: includePointer ? 2 : 0
+              border.color: accentColor
+
+              Text {
+                anchors.centerIn: parent
+                text: "🖱"
+                color: includePointer ? accentColor : textMuted
+                font.pixelSize: 16
+              }
+
+              MouseArea {
+                anchors.fill: parent
+                cursorShape: Qt.PointingHandCursor
+                onClicked: includePointer = !includePointer
+              }
+
+              Behavior on Layout.preferredWidth {
+                NumberAnimation { duration: 150; easing.type: Easing.OutCubic }
+              }
             }
           }
         }
