@@ -29,7 +29,7 @@ Utilities that interact with **mango IPC (mmsg)** to provide a better experience
 
 ## Installation
 
-Run the following command to clone the repository, install binaries to `~/.local/bin`, and set up default configurations in `~/.config/mango-utils`:
+Run the following command to clone the repository, install binaries to `~/.local/bin`, set up default configurations in `~/.config/mango-utils`, and install mutil to `~/.config/quickshell/mutil`:
 
 ```sh
 curl -fsSL https://raw.githubusercontent.com/atheeq-rhxn/mango-utils/main/install.sh | sh
