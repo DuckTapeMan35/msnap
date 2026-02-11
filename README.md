@@ -29,7 +29,7 @@ Utilities that interact with **mango IPC (mmsg)** to provide a better experience
 
 ## Installation
 
-Run the following command to clone the repository, install binaries to `~/.local/bin`, set up default configurations in `~/.config/mango-utils`, and install mutil to `~/.config/quickshell/mutil`:
+Run the following command to clone the repository, install binaries to `~/.local/bin`, and set up all configurations in `~/.config/mango-utils`:
 
 ```sh
 curl -fsSL https://raw.githubusercontent.com/atheeq-rhxn/mango-utils/main/install.sh | sh
@@ -65,14 +65,14 @@ curl -fsSL https://raw.githubusercontent.com/atheeq-rhxn/mango-utils/main/instal
 A GUI tool for screenshots and screencasts using QuickShell:
 
 ```sh
-qs - c mutil.qml
+qs -p ~/.config/mango-utils/mutil
 ```
 
 ## Mangowc Example Keybinds
 
 ```ini
 # mutil GUI combines mshot & mcast
-bind=none,Print,spawn,qs -c mutil
+bind=none,Print,spawn,qs -p ~/.config/mango-utils/mutil
 
 # Screenshot: Selected region
 bind=SHIFT,Print,spawn_shell,mshot -r
