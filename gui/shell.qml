@@ -240,7 +240,7 @@ PanelWindow {
     anchors.fill: parent
     focus: true
     
-    Keys.onLeftPressed: {
+    function navigateLeft() {
       const modes = ["region", "window", "screen"];
       const availableModes = modes.filter(mode => 
         mode !== "window" || root.isScreenshotMode
@@ -253,7 +253,7 @@ PanelWindow {
       root.captureMode = availableModes[currentIndex];
     }
     
-    Keys.onRightPressed: {
+    function navigateRight() {
       const modes = ["region", "window", "screen"];
       const availableModes = modes.filter(mode => 
         mode !== "window" || root.isScreenshotMode
@@ -264,6 +264,19 @@ PanelWindow {
       
       currentIndex = (currentIndex + 1) % availableModes.length;
       root.captureMode = availableModes[currentIndex];
+    }
+    
+    Keys.onLeftPressed: navigateLeft()
+    Keys.onRightPressed: navigateRight()
+    
+    Keys.onPressed: (event) => {
+      if (event.key === Qt.Key_H) {
+        navigateLeft();
+        event.accepted = true;
+      } else if (event.key === Qt.Key_L) {
+        navigateRight();
+        event.accepted = true;
+      }
     }
 
     Keys.onTabPressed: {
