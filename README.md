@@ -14,7 +14,7 @@ Screenshot and screen recording utilities that interact with **mango IPC (mmsg)*
 ### `mcast`
 
 * **Required**:
-  - One of: [`gpu-screen-recorder(default)`](https://git.dec05eba.com/gpu-screen-recorder/) [`wf-recorder`](https://github.com/ammen99/wf-recorder) [`wl-screenrec`](https://github.com/russelltg/wl-screenrec)
+  - [`gpu-screen-recorder`](https://git.dec05eba.com/gpu-screen-recorder/)
   - [`slurp`](https://github.com/emersion/slurp)
   - [`notify-send`](https://gitlab.gnome.org/GNOME/libnotify)
 
@@ -48,10 +48,13 @@ curl -fsSL https://raw.githubusercontent.com/atheeq-rhxn/msnap/main/install.sh |
 | --- | --- | --- | --- |
 | **mcast** | `-r`, `--region` | - | Record a selected screen region |
 |  | `-g`, `--geometry` | `SPEC` | Record region with direct geometry in "x,y wxh" format |
-|  | `-b`, `--backend` | `RECORDER` | Backend:<br>wf-recorder<br>wl-screenrec<br>gpu-screen-recorder |
 |  | `-t`, `--toggle` | - | Toggle recording on/off |
 |  | `-o`, `--output` | `DIRECTORY` | Set the output directory |
 |  | `-f`, `--filename` | `NAME` | Set the output filename/pattern |
+|  | `-a`, `--audio` | - | Record system audio |
+|  | `-m`, `--mic` | - | Record microphone |
+|  | `-A`, `--audio-device` | `DEVICE` | System audio device (default: default_output) |
+|  | `-M`, `--mic-device` | `DEVICE` | Microphone device (default: default_input) |
 | **mshot** | `-r`, `--region` | - | Screenshot a selected region |
 |  | `-g`, `--geometry` | `SPEC` | Capture region with direct geometry in "x,y wxh" format |
 |  | `-w`, `--window` | - | Capture the active window via `mmsg` |

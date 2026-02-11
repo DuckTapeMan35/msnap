@@ -10,11 +10,6 @@ flags:
   short: -g
   arg: spec
   help: Record region with direct geometry in "x,y wxh" format
-- long: --backend
-  short: -b
-  arg: recorder
-  allowed: [wf-recorder, wl-screenrec, gpu-screen-recorder]
-  help: Screen recorder backend to use
 - long: --toggle
   short: -t
   help: Toggle recording on/off
@@ -26,3 +21,17 @@ flags:
   short: -f
   arg: name
   help: Output filename for recording
+- long: --audio
+  short: -a
+  help: Record system audio
+- long: --mic
+  short: -m
+  help: Record microphone
+- long: --audio-device
+  short: -A
+  arg: device
+  help: System audio device (default - default_output)
+- long: --mic-device
+  short: -M
+  arg: device
+  help: Microphone device (default - default_input)

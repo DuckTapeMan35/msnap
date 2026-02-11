@@ -2,10 +2,9 @@ set -euo pipefail
 
 output_dir="${args[--output]:-${ini[output_dir]:-$HOME/Videos/Screencasts}}"
 filename_pattern="${args[--filename]:-${ini[filename_pattern]:-%Y%m%d%H%M%S.mp4}}"
-backend="${args[--backend]:-${ini[backend]:-wf-recorder}}"
 toggle_mode="${args[--toggle]:-}"
 
-command -v "$backend" >/dev/null || { echo "Error: $backend not installed"; exit 1; }
+command -v gpu-screen-recorder >/dev/null || { echo "Error: gpu-screen-recorder not installed"; exit 1; }
 
 recording_pid_file="/tmp/mcast.pid"
 recording_filepath_file="/tmp/mcast.filepath"
@@ -18,37 +17,27 @@ build_cmd() {
     geometry="$(slurp -d)" || { echo "Error: Failed to select region"; exit 1; }
   fi
 
-  case "$backend" in
-    wf-recorder)
-      if [[ -n "$geometry" ]]; then
-        cmd="$backend -g \"$geometry\" -f \"$filepath\""
-      else
-        cmd="$backend -f \"$filepath\""
-      fi
-      ;;
-    wl-screenrec)
-      if [[ -n "$geometry" ]]; then
-        cmd="$backend -g \"$geometry\" -f \"$filepath\""
-      else
-        cmd="$backend -f \"$filepath\""
-      fi
-      ;;
-    gpu-screen-recorder)
-      if [[ -n "$geometry" ]]; then
-        local x y w h
-        IFS=',x ' read -r x y w h <<< "$geometry"
-        local region_arg="-region ${w}x${h}+${x}+${y}"
-        local capture_type="-w region"
-        cmd="$backend $capture_type $region_arg -f 60 -o \"$filepath\""
-      else
-        cmd="$backend -w screen -f 60 -o \"$filepath\""
-      fi
-      ;;
-    *)
-      echo "Error: Unknown backend $backend"
-      exit 1
-      ;;
-  esac
+  cmd=""
+  local audio_flags=""
+  if [[ ${args[--audio]:-} && ${args[--mic]:-} ]]; then
+    local audio_device="${args[--audio-device]:-default_output}"
+    local mic_device="${args[--mic-device]:-default_input}"
+    audio_flags=" -a \"$audio_device|$mic_device\""
+  elif [[ ${args[--audio]:-} ]]; then
+    local device="${args[--audio-device]:-default_output}"
+    audio_flags=" -a \"$device\""
+  elif [[ ${args[--mic]:-} ]]; then
+    local device="${args[--mic-device]:-default_input}"
+    audio_flags=" -a \"$device\""
+  fi
+  if [[ -n "$geometry" ]]; then
+    local x y w h
+    IFS=',x ' read -r x y w h <<< "$geometry"
+    local region_arg="-region ${w}x${h}+${x}+${y}"
+    cmd="gpu-screen-recorder -w region $region_arg -f 60$audio_flags -o \"$filepath\""
+  else
+    cmd="gpu-screen-recorder -w screen -f 60$audio_flags -o \"$filepath\""
+  fi
 }
 
 if [[ -n "$toggle_mode" ]]; then

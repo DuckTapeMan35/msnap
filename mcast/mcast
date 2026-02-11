@@ -16,10 +16,9 @@ root_command() {
 
   output_dir="${args[--output]:-${ini[output_dir]:-$HOME/Videos/Screencasts}}"
   filename_pattern="${args[--filename]:-${ini[filename_pattern]:-%Y%m%d%H%M%S.mp4}}"
-  backend="${args[--backend]:-${ini[backend]:-wf-recorder}}"
   toggle_mode="${args[--toggle]:-}"
 
-  command -v "$backend" >/dev/null || { echo "Error: $backend not installed"; exit 1; }
+  command -v gpu-screen-recorder >/dev/null || { echo "Error: gpu-screen-recorder not installed"; exit 1; }
 
   recording_pid_file="/tmp/mcast.pid"
   recording_filepath_file="/tmp/mcast.filepath"
@@ -32,37 +31,27 @@ root_command() {
       geometry="$(slurp -d)" || { echo "Error: Failed to select region"; exit 1; }
     fi
 
-    case "$backend" in
-      wf-recorder)
-        if [[ -n "$geometry" ]]; then
-          cmd="$backend -g \"$geometry\" -f \"$filepath\""
-        else
-          cmd="$backend -f \"$filepath\""
-        fi
-        ;;
-      wl-screenrec)
-        if [[ -n "$geometry" ]]; then
-          cmd="$backend -g \"$geometry\" -f \"$filepath\""
-        else
-          cmd="$backend -f \"$filepath\""
-        fi
-        ;;
-      gpu-screen-recorder)
-        if [[ -n "$geometry" ]]; then
-          local x y w h
-          IFS=',x ' read -r x y w h <<< "$geometry"
-          local region_arg="-region ${w}x${h}+${x}+${y}"
-          local capture_type="-w region"
-          cmd="$backend $capture_type $region_arg -f 60 -o \"$filepath\""
-        else
-          cmd="$backend -w screen -f 60 -o \"$filepath\""
-        fi
-        ;;
-      *)
-        echo "Error: Unknown backend $backend"
-        exit 1
-        ;;
-    esac
+    cmd=""
+    local audio_flags=""
+    if [[ ${args[--audio]:-} && ${args[--mic]:-} ]]; then
+      local audio_device="${args[--audio-device]:-default_output}"
+      local mic_device="${args[--mic-device]:-default_input}"
+      audio_flags=" -a \"$audio_device|$mic_device\""
+    elif [[ ${args[--audio]:-} ]]; then
+      local device="${args[--audio-device]:-default_output}"
+      audio_flags=" -a \"$device\""
+    elif [[ ${args[--mic]:-} ]]; then
+      local device="${args[--mic-device]:-default_input}"
+      audio_flags=" -a \"$device\""
+    fi
+    if [[ -n "$geometry" ]]; then
+      local x y w h
+      IFS=',x ' read -r x y w h <<< "$geometry"
+      local region_arg="-region ${w}x${h}+${x}+${y}"
+      cmd="gpu-screen-recorder -w region $region_arg -f 60$audio_flags -o \"$filepath\""
+    else
+      cmd="gpu-screen-recorder -w screen -f 60$audio_flags -o \"$filepath\""
+    fi
   }
 
   if [[ -n "$toggle_mode" ]]; then
@@ -128,12 +117,6 @@ mcast_usage() {
     echo
 
     # :flag.usage
-    printf "  %s\n" "--backend, -b RECORDER"
-    printf "    Screen recorder backend to use\n"
-    printf "    %s\n" "Allowed: wf-recorder, wl-screenrec, gpu-screen-recorder"
-    echo
-
-    # :flag.usage
     printf "  %s\n" "--toggle, -t"
     printf "    Toggle recording on/off\n"
     echo
@@ -146,6 +129,26 @@ mcast_usage() {
     # :flag.usage
     printf "  %s\n" "--filename, -f NAME"
     printf "    Output filename for recording\n"
+    echo
+
+    # :flag.usage
+    printf "  %s\n" "--audio, -a"
+    printf "    Record system audio\n"
+    echo
+
+    # :flag.usage
+    printf "  %s\n" "--mic, -m"
+    printf "    Record microphone\n"
+    echo
+
+    # :flag.usage
+    printf "  %s\n" "--audio-device, -A DEVICE"
+    printf "    System audio device (default - default_output)\n"
+    echo
+
+    # :flag.usage
+    printf "  %s\n" "--mic-device, -M DEVICE"
+    printf "    Microphone device (default - default_input)\n"
     echo
 
     # :command.usage_fixed_flags
@@ -360,20 +363,6 @@ parse_requirements() {
         ;;
 
       # :flag.case
-      --backend | -b)
-
-        # :flag.case_arg
-        if [[ -n ${2+x} ]]; then
-          args['--backend']="$2"
-          shift
-          shift
-        else
-          printf "%s\n" "--backend requires an argument: --backend, -b RECORDER" >&2
-          exit 1
-        fi
-        ;;
-
-      # :flag.case
       --toggle | -t)
 
         # :flag.case_no_arg
@@ -409,6 +398,50 @@ parse_requirements() {
         fi
         ;;
 
+      # :flag.case
+      --audio | -a)
+
+        # :flag.case_no_arg
+        args['--audio']=1
+        shift
+        ;;
+
+      # :flag.case
+      --mic | -m)
+
+        # :flag.case_no_arg
+        args['--mic']=1
+        shift
+        ;;
+
+      # :flag.case
+      --audio-device | -A)
+
+        # :flag.case_arg
+        if [[ -n ${2+x} ]]; then
+          args['--audio-device']="$2"
+          shift
+          shift
+        else
+          printf "%s\n" "--audio-device requires an argument: --audio-device, -A DEVICE" >&2
+          exit 1
+        fi
+        ;;
+
+      # :flag.case
+      --mic-device | -M)
+
+        # :flag.case_arg
+        if [[ -n ${2+x} ]]; then
+          args['--mic-device']="$2"
+          shift
+          shift
+        else
+          printf "%s\n" "--mic-device requires an argument: --mic-device, -M DEVICE" >&2
+          exit 1
+        fi
+        ;;
+
       -?*)
         printf "invalid option: %s\n" "$key" >&2
         exit 1
@@ -424,12 +457,6 @@ parse_requirements() {
 
     esac
   done
-
-  # :command.whitelist_filter
-  if [[ ${args['--backend']:-} ]] && [[ ! ${args['--backend']:-} =~ ^(wf-recorder|wl-screenrec|gpu-screen-recorder)$ ]]; then
-    printf "%s\n" "--backend must be one of: wf-recorder, wl-screenrec, gpu-screen-recorder" >&2
-    exit 1
-  fi
 
 }
 
