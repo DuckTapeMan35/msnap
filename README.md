@@ -1,6 +1,6 @@
-# Mango utils
+# msnap
 
-Utilities that interact with **mango IPC (mmsg)** to provide a better experience for common tasks like screenshots and screencasts.
+Screenshot and screen recording utilities that interact with **mango IPC (mmsg)** to provide a better experience.
 
 ## Project Status
 
@@ -23,16 +23,18 @@ Utilities that interact with **mango IPC (mmsg)** to provide a better experience
 * **Required**: [`grim`](https://gitlab.freedesktop.org/emersion/grim), [`slurp`](https://github.com/emersion/slurp), [`wl-copy`](https://github.com/bugaevc/wl-clipboard), [`notify-send`](https://gitlab.gnome.org/GNOME/libnotify)
 * **Optional**: [`still`](https://github.com/faergeek/still) (for freezing screen), [`satty`](https://github.com/gabm/Satty) (for annotations)
 
-### `mutil`
+### `gui`
+
+A GUI tool for screenshots and screen recordings using QuickShell:
 
 * **Required**: [`quickshell` (qs)](https://github.com/quickshell-mirror/quickshell)
 
 ## Installation
 
-Run the following command to clone the repository, install binaries to `~/.local/bin`, and set up all configurations in `~/.config/mango-utils`:
+Run the following command to clone the repository, install binaries to `~/.local/bin`, and set up all configurations in `~/.config/msnap`:
 
 ```sh
-curl -fsSL https://raw.githubusercontent.com/atheeq-rhxn/mango-utils/main/install.sh | sh
+curl -fsSL https://raw.githubusercontent.com/atheeq-rhxn/msnap/main/install.sh | sh
 
 ```
 
@@ -60,19 +62,19 @@ curl -fsSL https://raw.githubusercontent.com/atheeq-rhxn/mango-utils/main/instal
 |  | `--no-copy` | - | Skip copying to clipboard |
 |  | `-F`, `--freeze` | - | Freeze the screen before capturing (requires `still`) |
 
-### `mutil`
+### `gui`
 
-A GUI tool for screenshots and screencasts using QuickShell:
+Launch the GUI:
 
 ```sh
-qs -p ~/.config/mango-utils/mutil
+qs -p ~/.config/msnap/gui
 ```
 
 ## Mangowc Example Keybinds
 
 ```ini
-# mutil GUI combines mshot & mcast
-bind=none,Print,spawn,qs -p ~/.config/mango-utils/mutil
+# gui combines mshot & mcast
+bind=none,Print,spawn,qs -p ~/.config/msnap/gui
 
 # Screenshot: Selected region
 bind=SHIFT,Print,spawn_shell,mshot -r
@@ -83,7 +85,7 @@ bind=ALT,F12,spawn_shell,mcast --toggle --region
 
 ## Configuration
 
-Default settings are stored in `~/.config/mango-utils/`:
+Default settings are stored in `~/.config/msnap/`:
 
 * **`mcast.conf`**: Sets `output_dir` (default: `~/Videos/Screencasts`) and `filename_pattern`.
 * **`mshot.conf`**: Sets `output_dir` (default: `~/Pictures/Screenshots`), `filename_pattern`, and `pointer_default`.

@@ -1,4 +1,4 @@
-config_dir="$HOME/.config/mango-utils"
+config_dir="$HOME/.config/msnap"
 config_file="$config_dir/mshot.conf"
 if [[ ! -f "$config_file" ]]; then
   mkdir -p "$config_dir"
