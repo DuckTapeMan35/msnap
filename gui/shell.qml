@@ -325,7 +325,13 @@ PanelWindow {
     Keys.onReturnPressed: root.executeAction()
     Keys.onEnterPressed: root.executeAction()
     Keys.onSpacePressed: root.executeAction()
-    Keys.onEscapePressed: root.close()
+    Keys.onEscapePressed: {
+      if (isRecordingActive) {
+        stopRecording();
+      } else {
+        root.close();
+      }
+    }
 
     onVisibleChanged: if (visible)
                         forceActiveFocus()
