@@ -93,8 +93,8 @@ PanelWindow {
 
   function executeAction() {
     if (captureMode === "region" && !isRegionSelected) {
-      root.visible = false;
       regionSelector.open();
+      root.visible = false;
       return;
     }
     isScreenshotMode ? executeScreenshot() : executeRecording();
