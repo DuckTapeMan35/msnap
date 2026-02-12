@@ -45,6 +45,12 @@ PanelWindow {
   property int resizeAnchorY: 0
 
   readonly property bool hasSelection: selW > 4 && selH > 4
+
+  // Colors from Config
+  readonly property color selectionBorderColor: Config.ssAccent
+  readonly property color handleColor: Config.handleColor
+  readonly property color dimTextColor: Config.handleColor
+
   function open() {
     isSelecting = false;
     isMoving = false;
@@ -103,7 +109,7 @@ PanelWindow {
 
     Rectangle {
       anchors.fill: parent
-      color: Qt.rgba(0, 0, 0, 0.5)
+      color: Qt.rgba(Config.overlayColor.r, Config.overlayColor.g, Config.overlayColor.b, Config.overlayAlpha)
       z: 0
     }
 
@@ -122,7 +128,7 @@ PanelWindow {
       y: 0
       width: overlay.width
       height: root.hasSelection ? root.selY : overlay.height
-      color: Qt.rgba(0, 0, 0, 0.5)
+      color: Qt.rgba(Config.overlayColor.r, Config.overlayColor.g, Config.overlayColor.b, Config.overlayAlpha)
       z: 2
       visible: root.hasSelection
     }
@@ -131,7 +137,7 @@ PanelWindow {
       y: root.hasSelection ? root.selY + root.selH : overlay.height
       width: overlay.width
       height: root.hasSelection ? overlay.height - (root.selY + root.selH) : 0
-      color: Qt.rgba(0, 0, 0, 0.5)
+      color: Qt.rgba(Config.overlayColor.r, Config.overlayColor.g, Config.overlayColor.b, Config.overlayAlpha)
       z: 2
       visible: root.hasSelection
     }
@@ -140,7 +146,7 @@ PanelWindow {
       y: root.selY
       width: root.hasSelection ? root.selX : 0
       height: root.selH
-      color: Qt.rgba(0, 0, 0, 0.5)
+      color: Qt.rgba(Config.overlayColor.r, Config.overlayColor.g, Config.overlayColor.b, Config.overlayAlpha)
       z: 2
       visible: root.hasSelection
     }
@@ -149,7 +155,7 @@ PanelWindow {
       y: root.selY
       width: root.hasSelection ? overlay.width - (root.selX + root.selW) : 0
       height: root.selH
-      color: Qt.rgba(0, 0, 0, 0.5)
+      color: Qt.rgba(Config.overlayColor.r, Config.overlayColor.g, Config.overlayColor.b, Config.overlayAlpha)
       z: 2
       visible: root.hasSelection
     }
@@ -162,7 +168,7 @@ PanelWindow {
       visible: root.hasSelection
       color: "transparent"
       border.width: 2
-      border.color: "#7aa2f7"
+        border.color: root.selectionBorderColor
       z: 5
     }
 
@@ -173,7 +179,7 @@ PanelWindow {
       width: dimText.implicitWidth + 16
       height: 24
       radius: 12
-      color: Qt.rgba(0, 0, 0, 0.75)
+      color: Qt.rgba(Config.dimLabelBg.r, Config.dimLabelBg.g, Config.dimLabelBg.b, Config.dimLabelAlpha)
       z: 10
 
       Text {
@@ -182,7 +188,7 @@ PanelWindow {
         text: root.selW + " × " + root.selH
         font.pixelSize: 12
         font.weight: Font.DemiBold
-        color: "#ffffff"
+        color: root.dimTextColor
       }
     }
 
@@ -192,7 +198,7 @@ PanelWindow {
       anchors.topMargin: 20
       text: root.hasSelection ? "Drag to move  ·  Corners to resize  ·  Enter to confirm  ·  Esc to cancel" : "Drag to select  ·  Esc to cancel"
       font.pixelSize: 11
-      color: Qt.rgba(1, 1, 1, 0.65)
+      color: Qt.rgba(Config.instructionColor.r, Config.instructionColor.g, Config.instructionColor.b, Config.instructionAlpha)
       z: 10
     }
 
@@ -218,9 +224,9 @@ PanelWindow {
         height: 12
         radius: 6
         visible: root.hasSelection && !root.isSelecting
-        color: "#ffffff"
+        color: root.handleColor
         border.width: 2
-        border.color: "#7aa2f7"
+        border.color: root.selectionBorderColor
         z: 12
 
         readonly property int diagCursor: (index === 0 || index === 3) ? Qt.SizeFDiagCursor : Qt.SizeBDiagCursor

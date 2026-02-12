@@ -22,17 +22,19 @@ PanelWindow {
   WlrLayershell.namespace: "msnap"
   WlrLayershell.exclusionMode: ExclusionMode.Ignore
 
-  readonly property color ssAccent: "#7aa2f7"
-  readonly property color recAccent: "#f7768e"
+  // Colors from Config
+  readonly property color ssAccent: Config.ssAccent
+  readonly property color recAccent: Config.recAccent
   readonly property color accentColor: isScreenshotMode ? ssAccent : recAccent
-  readonly property color bgColor: "#13141d"
-  readonly property color surfaceColor: "#1a1b26"
-  readonly property color textColor: "#c0caf5"
-  readonly property color textMuted: "#565f89"
-  readonly property color borderColor: "#2a2d3e"
+  readonly property color bgColor: Config.bgColor
+  readonly property color surfaceColor: Config.surfaceColor
+  readonly property color textColor: Config.textColor
+  readonly property color textMuted: Config.textMuted
+  readonly property color borderColor: Config.borderColor
 
   function accentBg(mode) {
-    return mode ? Qt.rgba(0.478, 0.635, 0.969, 0.13) : Qt.rgba(0.969, 0.463, 0.557, 0.13);
+    const c = mode ? ssAccent : recAccent;
+    return Qt.rgba(c.r, c.g, c.b, 0.13);
   }
 
   property bool isScreenshotMode: true

@@ -25,6 +25,8 @@ mkdir -p "$CONFIG_DIR/gui"
 cp "$TMP/gui/shell.qml" "$CONFIG_DIR/gui/"
 cp "$TMP/gui/RegionSelector.qml" "$CONFIG_DIR/gui/"
 cp "$TMP/gui/Icon.qml" "$CONFIG_DIR/gui/"
+cp "$TMP/gui/Config.qml" "$CONFIG_DIR/gui/"
+cp -n "$TMP/gui/gui.conf" "$CONFIG_DIR/"
 
 mkdir -p "$CONFIG_DIR/gui/icons"
 cp "$TMP/gui/icons/"*.svg "$CONFIG_DIR/gui/icons/"
