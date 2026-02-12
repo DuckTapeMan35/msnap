@@ -1,6 +1,5 @@
 import QtQuick
 import QtQuick.Layouts
-import QtQuick.Shapes 1.15
 import Quickshell
 import Quickshell.Io
 import Quickshell.Wayland
@@ -420,67 +419,11 @@ PanelWindow {
               ColumnLayout {
                 anchors.centerIn: parent
                 spacing: 5
-                Item {
+                Icon {
                   Layout.alignment: Qt.AlignHCenter
-                  width: 18
-                  height: 16
-                  readonly property color ic: root.captureMode === "region" ? root.accentColor : root.textColor
-                  Rectangle {
-                    x: 0
-                    y: 0
-                    width: 5
-                    height: 2
-                    color: parent.ic
-                  }
-                  Rectangle {
-                    x: 0
-                    y: 0
-                    width: 2
-                    height: 5
-                    color: parent.ic
-                  }
-                  Rectangle {
-                    x: 13
-                    y: 0
-                    width: 5
-                    height: 2
-                    color: parent.ic
-                  }
-                  Rectangle {
-                    x: 16
-                    y: 0
-                    width: 2
-                    height: 5
-                    color: parent.ic
-                  }
-                  Rectangle {
-                    x: 0
-                    y: 14
-                    width: 5
-                    height: 2
-                    color: parent.ic
-                  }
-                  Rectangle {
-                    x: 0
-                    y: 11
-                    width: 2
-                    height: 5
-                    color: parent.ic
-                  }
-                  Rectangle {
-                    x: 13
-                    y: 14
-                    width: 5
-                    height: 2
-                    color: parent.ic
-                  }
-                  Rectangle {
-                    x: 16
-                    y: 11
-                    width: 2
-                    height: 5
-                    color: parent.ic
-                  }
+                  name: "crop"
+                  color: root.captureMode === "region" ? root.accentColor : root.textMuted
+                  size: 20
                 }
                 Text {
                   Layout.alignment: Qt.AlignHCenter
@@ -510,27 +453,11 @@ PanelWindow {
               ColumnLayout {
                 anchors.centerIn: parent
                 spacing: 5
-                Item {
+                Icon {
                   Layout.alignment: Qt.AlignHCenter
-                  width: 18
-                  height: 15
-                  readonly property color ic: (root.captureMode === "window" && root.isScreenshotMode) ? root.accentColor : root.textColor
-                  readonly property color bar: (root.captureMode === "window" && root.isScreenshotMode) ? root.accentColor : root.textMuted
-                  Rectangle {
-                    anchors.fill: parent
-                    radius: 2
-                    color: "transparent"
-                    border.width: 1.5
-                    border.color: parent.ic
-                  }
-                  Rectangle {
-                    x: 1.5
-                    y: 1.5
-                    width: 15
-                    height: 4
-                    color: parent.bar
-                    radius: 1
-                  }
+                  name: "app-window"
+                  color: (root.captureMode === "window" && root.isScreenshotMode) ? root.accentColor : root.textMuted
+                  size: 20
                 }
                 Text {
                   Layout.alignment: Qt.AlignHCenter
@@ -559,37 +486,11 @@ PanelWindow {
               ColumnLayout {
                 anchors.centerIn: parent
                 spacing: 5
-                Item {
+                Icon {
                   Layout.alignment: Qt.AlignHCenter
-                  width: 20
-                  height: 17
-                  readonly property color ic: root.captureMode === "screen" ? root.accentColor : root.textColor
-                  readonly property color st: root.captureMode === "screen" ? root.accentColor : root.textMuted
-                  Rectangle {
-                    x: 0
-                    y: 0
-                    width: 20
-                    height: 13
-                    radius: 2
-                    color: "transparent"
-                    border.width: 1.5
-                    border.color: parent.ic
-                  }
-                  Rectangle {
-                    x: 8.5
-                    y: 13
-                    width: 3
-                    height: 2
-                    color: parent.st
-                  }
-                  Rectangle {
-                    x: 5
-                    y: 15
-                    width: 10
-                    height: 2
-                    radius: 1
-                    color: parent.st
-                  }
+                  name: "device-desktop"
+                  color: root.captureMode === "screen" ? root.accentColor : root.textMuted
+                  size: 22
                 }
                 Text {
                   Layout.alignment: Qt.AlignHCenter
@@ -631,117 +532,24 @@ PanelWindow {
                 anchors.centerIn: parent
                 spacing: 7
 
-                Item {
-                  width: 14
-                  height: 14
-                  visible: root.captureMode === "region" && !root.isRegionSelected
-
-                  Rectangle {
-                    x: 0
-                    y: 0
-                    width: 4
-                    height: 2
-                    color: root.bgColor
-                  }
-                  Rectangle {
-                    x: 0
-                    y: 0
-                    width: 2
-                    height: 4
-                    color: root.bgColor
-                  }
-                  Rectangle {
-                    x: 10
-                    y: 0
-                    width: 4
-                    height: 2
-                    color: root.bgColor
-                  }
-                  Rectangle {
-                    x: 12
-                    y: 0
-                    width: 2
-                    height: 4
-                    color: root.bgColor
-                  }
-                  Rectangle {
-                    x: 0
-                    y: 12
-                    width: 4
-                    height: 2
-                    color: root.bgColor
-                  }
-                  Rectangle {
-                    x: 0
-                    y: 10
-                    width: 2
-                    height: 4
-                    color: root.bgColor
-                  }
-                  Rectangle {
-                    x: 10
-                    y: 12
-                    width: 4
-                    height: 2
-                    color: root.bgColor
-                  }
-                  Rectangle {
-                    x: 12
-                    y: 10
-                    width: 2
-                    height: 4
-                    color: root.bgColor
-                  }
-                  Rectangle {
-                    anchors.centerIn: parent
-                    width: 3
-                    height: 3
-                    radius: 1.5
-                    color: root.bgColor
-                  }
-                }
-
-                Item {
-                  width: 16
-                  height: 13
-                  visible: root.isScreenshotMode && !(root.captureMode === "region" && !root.isRegionSelected)
-                  Rectangle {
-                    x: 0
-                    y: 3
-                    width: 16
-                    height: 10
-                    radius: 2
-                    color: "transparent"
-                    border.width: 1.5
-                    border.color: root.bgColor
-                  }
-                  Rectangle {
-                    x: 5
-                    y: 0
-                    width: 6
-                    height: 4
-                    radius: 1
-                    color: root.accentColor
-                    border.width: 1.5
-                    border.color: root.bgColor
-                  }
-                  Rectangle {
-                    x: 5
-                    y: 5
-                    width: 6
-                    height: 6
-                    radius: 3
-                    color: "transparent"
-                    border.width: 1.5
-                    border.color: root.bgColor
-                  }
-                }
-
-                Rectangle {
-                  width: 10
-                  height: 10
-                  radius: 5
+                Icon {
+                  name: "crop"
                   color: root.bgColor
+                  size: 18
+                  visible: root.captureMode === "region" && !root.isRegionSelected
+                }
+
+                Icon {
+                  name: "camera"
+                  color: root.bgColor
+                  size: 18
+                  visible: root.isScreenshotMode && !(root.captureMode === "region" && !root.isRegionSelected)
+                }
+
+                Icon {
+                  name: "player-record"
+                  color: root.bgColor
+                  size: 16
                   visible: !root.isScreenshotMode && !(root.captureMode === "region" && !root.isRegionSelected)
                 }
 
@@ -770,52 +578,11 @@ PanelWindow {
               border.width: root.includePointer ? 1 : 0
               border.color: root.ssAccent
 
-              Shape {
-                id: miniCursor
+              Icon {
                 anchors.centerIn: parent
-                width: 10
-                height: 14
-
-                readonly property color ic: root.includePointer ? root.ssAccent : root.textMuted
-
-                ShapePath {
-                  fillColor: miniCursor.ic
-                  strokeColor: miniCursor.ic
-                  strokeWidth: 0.5
-                  capStyle: ShapePath.RoundCap
-                  joinStyle: ShapePath.MiterJoin
-
-                  startX: 0
-                  startY: 0
-                  PathLine {
-                    x: 0
-                    y: 12
-                  }
-                  PathLine {
-                    x: 3
-                    y: 9.5
-                  }
-                  PathLine {
-                    x: 5.5
-                    y: 14
-                  }
-                  PathLine {
-                    x: 7
-                    y: 13
-                  }
-                  PathLine {
-                    x: 4.5
-                    y: 9
-                  }
-                  PathLine {
-                    x: 8.5
-                    y: 8.5
-                  }
-                  PathLine {
-                    x: 0
-                    y: 0
-                  }
-                }
+                name: "mouse"
+                color: root.includePointer ? root.ssAccent : root.textMuted
+                size: 20
               }
 
               MouseArea {
@@ -835,59 +602,11 @@ PanelWindow {
               border.width: root.recordMic ? 1 : 0
               border.color: root.recAccent
 
-              Item {
+              Icon {
                 anchors.centerIn: parent
-                width: 12
-                height: 16
-                readonly property color ic: root.recordMic ? root.recAccent : root.textMuted
-
-                Rectangle {
-                  // Mic Body
-                  anchors.horizontalCenter: parent.horizontalCenter
-                  y: 0
-                  width: 6
-                  height: 10
-                  radius: 3
-                  color: parent.ic
-                }
-                Shape {
-                  anchors.fill: parent
-                  ShapePath {
-                    strokeWidth: 1.5
-                    strokeColor: parent.ic
-                    fillColor: "transparent"
-                    capStyle: ShapePath.RoundCap
-                    joinStyle: ShapePath.RoundJoin
-
-                    startX: 0
-                    startY: 5
-                    PathArc {
-                      x: 12
-                      y: 5
-                      radiusX: 6
-                      radiusY: 6
-                      useLargeArc: false
-                    }
-
-                    PathMove {
-                      x: 6
-                      y: 11
-                    } // Center bottom of arc
-                    PathLine {
-                      x: 6
-                      y: 14.5
-                    }
-
-                    PathMove {
-                      x: 3
-                      y: 14.5
-                    }
-                    PathLine {
-                      x: 9
-                      y: 14.5
-                    }
-                  }
-                }
+                name: "microphone"
+                color: root.recordMic ? root.recAccent : root.textMuted
+                size: 20
               }
 
               MouseArea {
@@ -907,56 +626,11 @@ PanelWindow {
               border.width: root.recordAudio ? 1 : 0
               border.color: root.recAccent
 
-              Item {
+              Icon {
                 anchors.centerIn: parent
-                width: 14
-                height: 14
-                readonly property color ic: root.recordAudio ? root.recAccent : root.textMuted
-
-                Shape {
-                  anchors.fill: parent
-                  ShapePath {
-                    strokeWidth: 1.5
-                    strokeColor: parent.ic
-                    fillColor: "transparent"
-                    capStyle: ShapePath.RoundCap
-
-                    startX: 1.5
-                    startY: 7
-                    PathLine {
-                      x: 1.5
-                      y: 4
-                    }
-                    PathArc {
-                      x: 12.5
-                      y: 4
-                      radiusX: 5.5
-                      radiusY: 5.5
-                      useLargeArc: false
-                    }
-                    PathLine {
-                      x: 12.5
-                      y: 7
-                    }
-                  }
-                }
-
-                Rectangle {
-                  x: 0
-                  y: 6
-                  width: 3
-                  height: 7
-                  radius: 1.5
-                  color: parent.ic
-                }
-                Rectangle {
-                  x: 11
-                  y: 6
-                  width: 3
-                  height: 7
-                  radius: 1.5
-                  color: parent.ic
-                }
+                name: "volume"
+                color: root.recordAudio ? root.recAccent : root.textMuted
+                size: 20
               }
 
               MouseArea {

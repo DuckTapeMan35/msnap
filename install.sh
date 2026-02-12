@@ -24,6 +24,10 @@ echo "Installing gui to $CONFIG_DIR/gui"
 mkdir -p "$CONFIG_DIR/gui"
 cp "$TMP/gui/shell.qml" "$CONFIG_DIR/gui/"
 cp "$TMP/gui/RegionSelector.qml" "$CONFIG_DIR/gui/"
+cp "$TMP/gui/Icon.qml" "$CONFIG_DIR/gui/"
+
+mkdir -p "$CONFIG_DIR/gui/icons"
+cp "$TMP/gui/icons/"*.svg "$CONFIG_DIR/gui/icons/"
 
 echo "Cleaning up…"
 rm -rf "$TMP"
