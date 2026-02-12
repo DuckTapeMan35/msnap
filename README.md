@@ -87,9 +87,10 @@ bind=SHIFT,Print,spawn_shell,mshot -r
 bind=ALT,F12,spawn_shell,mcast --toggle --region
 ```
 
-**Note:** Add to this to prevent msnap appearing in screenshots due to animation delays:
+**Note:** Add the following rule to prevent the `gui` layer from being animated or blurred:
+
 ```ini
-layerrule=layer_name:msnap,noanim:1
+layerrule=layer_name:msnap,noanim:1,noblur:1
 ```
 
 ## Configuration
