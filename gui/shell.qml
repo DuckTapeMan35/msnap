@@ -276,8 +276,6 @@ PanelWindow {
       anchors.rightMargin: 12
       focus: true
 
-      Keys.onEscapePressed: root.stopRecording()
-
       onVisibleChanged: if (visible)
                           forceActiveFocus()
       Component.onCompleted: if (visible)
