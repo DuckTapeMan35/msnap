@@ -42,6 +42,7 @@ PanelWindow {
 
   // Screenshot specific
   property bool includePointer: false
+  property bool includeAnnotation: false
 
   // Recording specific
   property bool recordMic: false
@@ -108,6 +109,8 @@ PanelWindow {
       args.push("-w");
     if (includePointer)
       args.push("-p");
+    if (includeAnnotation)
+      args.push("-a");
     Quickshell.execDetached(args);
     close();
   }
@@ -299,6 +302,11 @@ PanelWindow {
                       } else if (event.key === Qt.Key_P) {
                         if (root.isScreenshotMode) {
                           root.includePointer = !root.includePointer;
+                        }
+                        event.accepted = true;
+                      } else if (event.key === Qt.Key_E) {
+                        if (root.isScreenshotMode) {
+                          root.includeAnnotation = !root.includeAnnotation;
                         }
                         event.accepted = true;
                       } else if (event.key === Qt.Key_M) {
@@ -583,6 +591,30 @@ PanelWindow {
                 anchors.fill: parent
                 cursorShape: Qt.PointingHandCursor
                 onClicked: root.executeAction()
+              }
+            }
+
+            // Annotation Toggle
+            Rectangle {
+              width: 36
+              height: 36
+              radius: 8
+              visible: root.isScreenshotMode
+              color: root.includeAnnotation ? root.accentBg(true) : root.surfaceColor
+              border.width: root.includeAnnotation ? 1 : 0
+              border.color: root.ssAccent
+
+              Icon {
+                anchors.centerIn: parent
+                name: "pencil"
+                color: root.includeAnnotation ? root.ssAccent : root.textMuted
+                size: 20
+              }
+
+              MouseArea {
+                anchors.fill: parent
+                cursorShape: Qt.PointingHandCursor
+                onClicked: root.includeAnnotation = !root.includeAnnotation
               }
             }
 
