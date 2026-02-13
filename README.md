@@ -25,7 +25,7 @@ Screenshot and screen recording utilities that interact with **mango IPC (mmsg)*
 
 ### `gui`
 
-A GUI tool for screenshots and screen recordings using QuickShell:
+GUI using `mcast` & `mshot` 
 
 * **Required**: [`quickshell` (qs)](https://github.com/quickshell-mirror/quickshell)
 
@@ -46,7 +46,8 @@ curl -fsSL https://raw.githubusercontent.com/atheeq-rhxn/msnap/main/install.sh |
 
 | Tool | Flag | Argument | Description |
 | --- | --- | --- | --- |
-| **mcast** | `-r`, `--region` | - | Record a selected screen region |
+| **mcast** | *(no flags)* | - | Record full screen |
+|  | `-r`, `--region` | - | Record a selected screen region |
 |  | `-g`, `--geometry` | `SPEC` | Record region with direct geometry in "x,y wxh" format |
 |  | `-t`, `--toggle` | - | Toggle recording on/off |
 |  | `-o`, `--output` | `DIRECTORY` | Set the output directory |
@@ -55,7 +56,8 @@ curl -fsSL https://raw.githubusercontent.com/atheeq-rhxn/msnap/main/install.sh |
 |  | `-m`, `--mic` | - | Record microphone |
 |  | `-A`, `--audio-device` | `DEVICE` | System audio device (default: default_output) |
 |  | `-M`, `--mic-device` | `DEVICE` | Microphone device (default: default_input) |
-| **mshot** | `-r`, `--region` | - | Screenshot a selected region |
+| **mshot** | *(no flags)* | - | Screenshot full screen |
+|  | `-r`, `--region` | - | Screenshot a selected region |
 |  | `-g`, `--geometry` | `SPEC` | Capture region with direct geometry in "x,y wxh" format |
 |  | `-w`, `--window` | - | Capture the active window via `mmsg` |
 |  | `-p`, `--pointer` | - | Include mouse pointer in capture |
@@ -73,18 +75,34 @@ Launch the GUI:
 qs -p ~/.config/msnap/gui
 ```
 
+**Keyboard Shortcuts:**
+
+| Key | Action |
+|-----|--------|
+| `H` / `L` | Navigate capture modes (left/right) |
+| `J` / `K` | Switch mode (Screenshot/Record) |
+| `Tab` | Toggle mode |
+| `Enter` / `Space` | Execute action |
+| `P` | Toggle pointer (screenshot only) |
+| `E` | Toggle annotation (screenshot only) |
+| `A` | Toggle system audio (recording only) |
+| `M` | Toggle microphone (recording only) |
+| `Escape` | Close / Stop recording |
+
+When recording, a red indicator appears in the top-right corner; hover and click it to stop.
+
 ## Mangowc Configuration
 
 Example keybinds:
 ```ini
-# gui combines mshot & mcast
+# gui 
 bind=none,Print,spawn,qs -p ~/.config/msnap/gui
 
 # Screenshot: Selected region
 bind=SHIFT,Print,spawn_shell,mshot -r
 
 # Screencast: Toggle region recording
-bind=ALT,F12,spawn_shell,mcast --toggle --region
+bind=SHIFT,ALT,spawn_shell,mcast --toggle --region
 ```
 
 **Note:** Add the following rule to prevent the `gui` layer from being animated or blurred:
@@ -99,6 +117,7 @@ Default settings are stored in `~/.config/msnap/`:
 
 * **`mcast.conf`**: Sets `output_dir` (default: `~/Videos/Screencasts`) and `filename_pattern`.
 * **`mshot.conf`**: Sets `output_dir` (default: `~/Pictures/Screenshots`), `filename_pattern`, and `pointer_default`.
+* **`gui.conf`**: Theme configuration (colors, accents, alphas) for the GUI interface.
 
 ## Development
 
