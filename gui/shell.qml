@@ -6,6 +6,95 @@ import Quickshell.Wayland
 
 PanelWindow {
   id: root
+  component SmoothTransition: NumberAnimation {
+    duration: 200
+    easing.type: Easing.OutCubic
+  }
+
+  component ToggleButton: Rectangle {
+    id: toggleRoot
+
+    property string iconName: ""
+    property bool active: false
+    property color activeColor: Config.ssAccent
+    property color inactiveColor: Config.textMuted
+    property int iconSize: 20
+
+    signal clicked
+
+    width: Config.toggleButtonSize
+    height: Config.toggleButtonSize
+    radius: Config.defaultBorderRadius
+
+    color: active ? Qt.rgba(activeColor.r, activeColor.g, activeColor.b, 0.13) : Config.surfaceColor
+    border.width: active ? 1 : 0
+    border.color: activeColor
+
+    Icon {
+      anchors.centerIn: parent
+      name: toggleRoot.iconName
+      color: toggleRoot.active ? toggleRoot.activeColor : toggleRoot.inactiveColor
+      size: toggleRoot.iconSize
+    }
+
+    MouseArea {
+      anchors.fill: parent
+      cursorShape: Qt.PointingHandCursor
+      onClicked: toggleRoot.clicked()
+    }
+  }
+
+  component CaptureModeButton: Rectangle {
+    id: captureRoot
+
+    property string mode: ""
+    property string iconName: ""
+    property string label: ""
+    property bool isActive: false
+    property bool isEnabled: true
+    property color accentColor: Config.ssAccent
+    property int iconSize: 20
+
+    signal clicked
+
+    Layout.fillWidth: true
+    height: Config.buttonHeight
+    radius: Config.defaultBorderRadius
+
+    enabled: isEnabled
+    opacity: isEnabled ? 1.0 : 0.3
+
+    color: isActive ? Qt.rgba(accentColor.r, accentColor.g, accentColor.b, 0.13) : Config.surfaceColor
+    border.width: isActive ? 1 : 0
+    border.color: accentColor
+
+    ColumnLayout {
+      anchors.centerIn: parent
+      spacing: 5
+
+      Icon {
+        Layout.alignment: Qt.AlignHCenter
+        name: captureRoot.iconName
+        color: (captureRoot.isActive && captureRoot.isEnabled) ? captureRoot.accentColor : Config.textMuted
+        size: captureRoot.iconSize
+      }
+
+      Text {
+        Layout.alignment: Qt.AlignHCenter
+        text: captureRoot.label
+        font.pixelSize: 11
+        font.weight: (captureRoot.isActive && captureRoot.isEnabled) ? Font.DemiBold : Font.Normal
+        color: (captureRoot.isActive && captureRoot.isEnabled) ? captureRoot.accentColor : Config.textMuted
+      }
+    }
+
+    MouseArea {
+      anchors.fill: parent
+      enabled: captureRoot.isEnabled
+      cursorShape: captureRoot.isEnabled ? Qt.PointingHandCursor : Qt.ArrowCursor
+      onClicked: captureRoot.clicked()
+    }
+  }
 
   screen: Quickshell.screens[0]
 
@@ -22,32 +111,19 @@ PanelWindow {
   WlrLayershell.namespace: "msnap"
   WlrLayershell.exclusionMode: ExclusionMode.Ignore
 
-  // Colors from Config
-  readonly property color ssAccent: Config.ssAccent
-  readonly property color recAccent: Config.recAccent
-  readonly property color accentColor: isScreenshotMode ? ssAccent : recAccent
-  readonly property color bgColor: Config.bgColor
-  readonly property color surfaceColor: Config.surfaceColor
-  readonly property color textColor: Config.textColor
-  readonly property color textMuted: Config.textMuted
-  readonly property color borderColor: Config.borderColor
-
-  function accentBg(mode) {
-    const c = mode ? ssAccent : recAccent;
-    return Qt.rgba(c.r, c.g, c.b, 0.13);
-  }
-
+  // State properties
   property bool isScreenshotMode: true
   property string captureMode: "region"
 
-  // Screenshot specific
+  // Screenshot options
   property bool includePointer: false
   property bool includeAnnotation: false
 
-  // Recording specific
+  // Recording options
   property bool recordMic: false
   property bool recordAudio: false
 
+  // Selection state
   property bool isRegionSelected: false
   property int selectedX: 0
   property int selectedY: 0
@@ -55,27 +131,37 @@ PanelWindow {
   property int selectedHeight: 0
   property bool isRecordingActive: false
 
-  readonly property string homePath: Quickshell.env("HOME")
+  // Computed properties
+  readonly property color accentColor: isScreenshotMode ? Config.ssAccent : Config.recAccent
+  readonly property var captureModes: ["region", "window", "screen"]
+
+  // Helper function for accent background
+  function accentBg(mode) {
+    const c = mode ? Config.ssAccent : Config.recAccent;
+    return Qt.rgba(c.r, c.g, c.b, 0.13);
+  }
 
   onCaptureModeChanged: isRegionSelected = false
 
   onIsScreenshotModeChanged: {
     isRegionSelected = false;
-    if (!isScreenshotMode && captureMode === "window")
+    if (!isScreenshotMode && captureMode === "window") {
       captureMode = "region";
+    }
   }
 
   FileView {
     id: recordingPidFile
-    path: "/tmp/mcast.pid"
+    path: Config.pidFilePath
     watchChanges: true
     printErrors: false
     onLoaded: isRecordingActive = true
     onLoadFailed: {
       if (isRecordingActive) {
         isRecordingActive = false;
-        if (!root.visible)
+        if (!root.visible) {
           quitTimer.start();
+        }
       }
     }
   }
@@ -101,43 +187,51 @@ PanelWindow {
     isScreenshotMode ? executeScreenshot() : executeRecording();
   }
 
-  function executeScreenshot() {
-    const args = [homePath + "/.local/bin/mshot"];
-    if (captureMode === "region" && isRegionSelected)
-      args.push("-g", selectedX + "," + selectedY + " " + selectedWidth + "x" + selectedHeight);
-    else if (captureMode === "window")
+  function buildCommandArgs(baseCommand, isScreenshot) {
+    const args = [Config[baseCommand + "Path"]];
+
+    // Add geometry arguments
+    if (captureMode === "region" && isRegionSelected) {
+      args.push("-g", `${selectedX},${selectedY} ${selectedWidth}x${selectedHeight}`);
+    } else if (captureMode === "window") {
       args.push("-w");
-    if (includePointer)
-      args.push("-p");
-    if (includeAnnotation)
-      args.push("-a");
-    Quickshell.execDetached(args);
+    }
+
+    // Add mode-specific flags
+    if (isScreenshot) {
+      if (includePointer)
+        args.push("-p");
+      if (includeAnnotation)
+        args.push("-a");
+    } else {
+      if (recordMic)
+        args.push("-m");
+      if (recordAudio)
+        args.push("-a");
+    }
+
+    return args;
+  }
+
+  function executeScreenshot() {
+    Quickshell.execDetached(buildCommandArgs("mshot", true));
     close();
   }
 
   function executeRecording() {
-    const args = [homePath + "/.local/bin/mcast", "--toggle"];
-    if (captureMode === "region" && isRegionSelected)
-      args.push("-g", selectedX + "," + selectedY + " " + selectedWidth + "x" + selectedHeight);
-    else if (captureMode === "window")
-      args.push("-w");
-
-    // Audio Flags
-    if (recordMic)
-      args.push("-m");
-    if (recordAudio)
-      args.push("-a");
-
+    const args = buildCommandArgs("mcast", false);
+    args.push("--toggle");
     Quickshell.execDetached(args);
     isRecordingActive = true;
     root.visible = false;
   }
 
   function stopRecording() {
-    Quickshell.execDetached([homePath + "/.local/bin/mcast", "--toggle"]);
+    Quickshell.execDetached([Config.mcastPath, "--toggle"]);
     isRecordingActive = false;
-    if (!root.visible)
+    if (!root.visible) {
       quitTimer.start();
+    }
   }
 
   RegionSelector {
@@ -195,25 +289,16 @@ PanelWindow {
         width: recordingIndicator.hovered ? 52 : 6
         height: recordingIndicator.hovered ? 52 : 38
         radius: recordingIndicator.hovered ? 9 : 3
-        color: root.recAccent
+        color: Config.recAccent
 
         Behavior on width {
-          NumberAnimation {
-            duration: 200
-            easing.type: Easing.OutCubic
-          }
+          SmoothTransition {}
         }
         Behavior on height {
-          NumberAnimation {
-            duration: 200
-            easing.type: Easing.OutCubic
-          }
+          SmoothTransition {}
         }
         Behavior on radius {
-          NumberAnimation {
-            duration: 200
-            easing.type: Easing.OutCubic
-          }
+          SmoothTransition {}
         }
 
         Rectangle {
@@ -221,8 +306,9 @@ PanelWindow {
           width: 14
           height: 14
           radius: 2
-          color: root.bgColor
+          color: Config.bgColor
           opacity: recordingIndicator.hovered ? 1.0 : 0.0
+
           Behavior on opacity {
             NumberAnimation {
               duration: 150
@@ -233,6 +319,7 @@ PanelWindow {
         SequentialAnimation on opacity {
           running: !recordingIndicator.hovered && recordingIndicator.visible
           loops: Animation.Infinite
+
           NumberAnimation {
             to: 0.5
             duration: 900
@@ -261,75 +348,71 @@ PanelWindow {
     anchors.fill: parent
     focus: true
 
-    function navigateLeft() {
-      const modes = ["region", "window", "screen"];
-      const availableModes = modes.filter(mode => mode !== "window" || root.isScreenshotMode);
+    // Navigation helper functions
+    function getAvailableModes() {
+      return root.captureModes.filter(mode => mode !== "window" || root.isScreenshotMode);
+    }
+
+    function navigateMode(direction) {
+      const availableModes = getAvailableModes();
       let currentIndex = availableModes.indexOf(root.captureMode);
       if (currentIndex === -1)
         currentIndex = 0;
 
-      currentIndex = (currentIndex - 1 + availableModes.length) % availableModes.length;
+      currentIndex = (currentIndex + direction + availableModes.length) % availableModes.length;
       root.captureMode = availableModes[currentIndex];
     }
 
-    function navigateRight() {
-      const modes = ["region", "window", "screen"];
-      const availableModes = modes.filter(mode => mode !== "window" || root.isScreenshotMode);
-      let currentIndex = availableModes.indexOf(root.captureMode);
-      if (currentIndex === -1)
-        currentIndex = 0;
-
-      currentIndex = (currentIndex + 1) % availableModes.length;
-      root.captureMode = availableModes[currentIndex];
+    function toggleMode() {
+      root.isScreenshotMode = !root.isScreenshotMode;
     }
 
-    Keys.onLeftPressed: navigateLeft()
-    Keys.onRightPressed: navigateRight()
+    // Keyboard navigation
+    Keys.onLeftPressed: navigateMode(-1)
+    Keys.onRightPressed: navigateMode(1)
+
+    // Key handler lookup table
+    readonly property var keyHandlers: ({
+                                          [Qt.Key_H]: () => navigateMode(-1),
+                                          [Qt.Key_L]: () => navigateMode(1),
+                                          [Qt.Key_J]: () => {
+                                            root.isScreenshotMode = false;
+                                          },
+                                          [Qt.Key_K]: () => {
+                                            root.isScreenshotMode = true;
+                                          },
+                                          [Qt.Key_P]: () => {
+                                            if (root.isScreenshotMode) {
+                                              root.includePointer = !root.includePointer;
+                                            }
+                                          },
+                                          [Qt.Key_E]: () => {
+                                            if (root.isScreenshotMode) {
+                                              root.includeAnnotation = !root.includeAnnotation;
+                                            }
+                                          },
+                                          [Qt.Key_M]: () => {
+                                            if (!root.isScreenshotMode) {
+                                              root.recordMic = !root.recordMic;
+                                            }
+                                          },
+                                          [Qt.Key_A]: () => {
+                                            if (!root.isScreenshotMode) {
+                                              root.recordAudio = !root.recordAudio;
+                                            }
+                                          }
+                                        })
 
     Keys.onPressed: event => {
-                      if (event.key === Qt.Key_H) {
-                        navigateLeft();
-                        event.accepted = true;
-                      } else if (event.key === Qt.Key_L) {
-                        navigateRight();
-                        event.accepted = true;
-                      } else if (event.key === Qt.Key_J) {
-                        root.isScreenshotMode = false;
-                        event.accepted = true;
-                      } else if (event.key === Qt.Key_K) {
-                        root.isScreenshotMode = true;
-                        event.accepted = true;
-                      } else if (event.key === Qt.Key_P) {
-                        if (root.isScreenshotMode) {
-                          root.includePointer = !root.includePointer;
-                        }
-                        event.accepted = true;
-                      } else if (event.key === Qt.Key_E) {
-                        if (root.isScreenshotMode) {
-                          root.includeAnnotation = !root.includeAnnotation;
-                        }
-                        event.accepted = true;
-                      } else if (event.key === Qt.Key_M) {
-                        if (!root.isScreenshotMode) {
-                          root.recordMic = !root.recordMic;
-                        }
-                        event.accepted = true;
-                      } else if (event.key === Qt.Key_A) {
-                        if (!root.isScreenshotMode) {
-                          root.recordAudio = !root.recordAudio;
-                        }
+                      const handler = keyHandlers[event.key];
+                      if (handler) {
+                        handler();
                         event.accepted = true;
                       }
                     }
 
-    Keys.onTabPressed: {
-      root.isScreenshotMode = !root.isScreenshotMode;
-    }
-
-    Keys.onBacktabPressed: {
-      root.isScreenshotMode = !root.isScreenshotMode;
-    }
-
+    Keys.onTabPressed: toggleMode()
+    Keys.onBacktabPressed: toggleMode()
     Keys.onReturnPressed: root.executeAction()
     Keys.onEnterPressed: root.executeAction()
     Keys.onSpacePressed: root.executeAction()
@@ -353,16 +436,17 @@ PanelWindow {
       Rectangle {
         anchors.horizontalCenter: parent.horizontalCenter
         anchors.bottom: parent.bottom
-        anchors.bottomMargin: 68
-        width: 276
+        anchors.bottomMargin: Config.panelBottomMargin
+        width: Config.panelWidth
         height: layout.implicitHeight + 26
-        color: root.bgColor
+        color: Config.bgColor
         radius: 12
         border.width: 1
-        border.color: root.borderColor
+        border.color: Config.borderColor
 
         MouseArea {
           anchors.fill: parent
+          // Block clicks from propagating to parent
         }
 
         ColumnLayout {
@@ -375,11 +459,12 @@ PanelWindow {
           }
           spacing: 10
 
+          // Mode selector (Screenshot / Record)
           Rectangle {
             Layout.fillWidth: true
             height: 34
-            color: root.surfaceColor
-            radius: 8
+            color: Config.surfaceColor
+            radius: Config.defaultBorderRadius
 
             RowLayout {
               anchors {
@@ -392,15 +477,16 @@ PanelWindow {
                 Layout.fillWidth: true
                 Layout.fillHeight: true
                 radius: 6
-                color: root.isScreenshotMode ? root.ssAccent : "transparent"
+                color: root.isScreenshotMode ? Config.ssAccent : "transparent"
 
                 Text {
                   anchors.centerIn: parent
                   text: "Screenshot"
                   font.pixelSize: 12
                   font.weight: root.isScreenshotMode ? Font.DemiBold : Font.Normal
-                  color: root.isScreenshotMode ? root.bgColor : root.textMuted
+                  color: root.isScreenshotMode ? Config.bgColor : Config.textMuted
                 }
+
                 MouseArea {
                   anchors.fill: parent
                   cursorShape: Qt.PointingHandCursor
@@ -412,15 +498,16 @@ PanelWindow {
                 Layout.fillWidth: true
                 Layout.fillHeight: true
                 radius: 6
-                color: !root.isScreenshotMode ? root.recAccent : "transparent"
+                color: !root.isScreenshotMode ? Config.recAccent : "transparent"
 
                 Text {
                   anchors.centerIn: parent
                   text: "Record"
                   font.pixelSize: 12
                   font.weight: !root.isScreenshotMode ? Font.DemiBold : Font.Normal
-                  color: !root.isScreenshotMode ? root.bgColor : root.textMuted
+                  color: !root.isScreenshotMode ? Config.bgColor : Config.textMuted
                 }
+
                 MouseArea {
                   anchors.fill: parent
                   cursorShape: Qt.PointingHandCursor
@@ -430,110 +517,42 @@ PanelWindow {
             }
           }
 
+          // Capture mode buttons
           RowLayout {
             Layout.fillWidth: true
-            spacing: 6
+            spacing: Config.defaultSpacing
 
-            Rectangle {
-              Layout.fillWidth: true
-              height: 64
-              radius: 8
-              color: root.captureMode === "region" ? root.accentBg(root.isScreenshotMode) : root.surfaceColor
-              border.width: root.captureMode === "region" ? 1 : 0
-              border.color: root.accentColor
-
-              ColumnLayout {
-                anchors.centerIn: parent
-                spacing: 5
-                Icon {
-                  Layout.alignment: Qt.AlignHCenter
-                  name: "crop"
-                  color: root.captureMode === "region" ? root.accentColor : root.textMuted
-                  size: 20
-                }
-                Text {
-                  Layout.alignment: Qt.AlignHCenter
-                  text: "Region"
-                  font.pixelSize: 11
-                  font.weight: root.captureMode === "region" ? Font.DemiBold : Font.Normal
-                  color: root.captureMode === "region" ? root.accentColor : root.textMuted
-                }
-              }
-              MouseArea {
-                anchors.fill: parent
-                cursorShape: Qt.PointingHandCursor
-                onClicked: root.captureMode = "region"
-              }
+            CaptureModeButton {
+              mode: "region"
+              iconName: "crop"
+              label: "Region"
+              isActive: root.captureMode === "region"
+              accentColor: root.accentColor
+              onClicked: root.captureMode = "region"
             }
 
-            Rectangle {
-              Layout.fillWidth: true
-              height: 64
-              radius: 8
-              enabled: root.isScreenshotMode
-              opacity: root.isScreenshotMode ? 1.0 : 0.3
-              color: (root.captureMode === "window") ? root.accentBg(root.isScreenshotMode) : root.surfaceColor
-              border.width: (root.captureMode === "window") ? 1 : 0
-              border.color: root.accentColor
-
-              ColumnLayout {
-                anchors.centerIn: parent
-                spacing: 5
-                Icon {
-                  Layout.alignment: Qt.AlignHCenter
-                  name: "app-window"
-                  color: (root.captureMode === "window" && root.isScreenshotMode) ? root.accentColor : root.textMuted
-                  size: 20
-                }
-                Text {
-                  Layout.alignment: Qt.AlignHCenter
-                  text: "Window"
-                  font.pixelSize: 11
-                  font.weight: (root.captureMode === "window" && root.isScreenshotMode) ? Font.DemiBold : Font.Normal
-                  color: (root.captureMode === "window" && root.isScreenshotMode) ? root.accentColor : root.textMuted
-                }
-              }
-              MouseArea {
-                anchors.fill: parent
-                enabled: root.isScreenshotMode
-                cursorShape: root.isScreenshotMode ? Qt.PointingHandCursor : Qt.ArrowCursor
-                onClicked: root.captureMode = "window"
-              }
+            CaptureModeButton {
+              mode: "window"
+              iconName: "app-window"
+              label: "Window"
+              isActive: root.captureMode === "window"
+              isEnabled: root.isScreenshotMode
+              accentColor: root.accentColor
+              onClicked: root.captureMode = "window"
             }
 
-            Rectangle {
-              Layout.fillWidth: true
-              height: 64
-              radius: 8
-              color: root.captureMode === "screen" ? root.accentBg(root.isScreenshotMode) : root.surfaceColor
-              border.width: root.captureMode === "screen" ? 1 : 0
-              border.color: root.accentColor
-
-              ColumnLayout {
-                anchors.centerIn: parent
-                spacing: 5
-                Icon {
-                  Layout.alignment: Qt.AlignHCenter
-                  name: "device-desktop"
-                  color: root.captureMode === "screen" ? root.accentColor : root.textMuted
-                  size: 22
-                }
-                Text {
-                  Layout.alignment: Qt.AlignHCenter
-                  text: "Screen"
-                  font.pixelSize: 11
-                  font.weight: root.captureMode === "screen" ? Font.DemiBold : Font.Normal
-                  color: root.captureMode === "screen" ? root.accentColor : root.textMuted
-                }
-              }
-              MouseArea {
-                anchors.fill: parent
-                cursorShape: Qt.PointingHandCursor
-                onClicked: root.captureMode = "screen"
-              }
+            CaptureModeButton {
+              mode: "screen"
+              iconName: "device-desktop"
+              label: "Screen"
+              isActive: root.captureMode === "screen"
+              accentColor: root.accentColor
+              iconSize: 22
+              onClicked: root.captureMode = "screen"
             }
           }
 
+          // Selection dimensions display
           Text {
             Layout.alignment: Qt.AlignHCenter
             visible: root.captureMode === "region" && root.isRegionSelected
@@ -543,15 +562,16 @@ PanelWindow {
             color: root.accentColor
           }
 
+          // Action buttons row
           RowLayout {
             Layout.fillWidth: true
-            spacing: 6
+            spacing: Config.defaultSpacing
 
-            // Main Action Button (Record / Capture)
+            // Main action button
             Rectangle {
               Layout.fillWidth: true
-              height: 36
-              radius: 8
+              height: Config.toggleButtonSize
+              radius: Config.defaultBorderRadius
               color: root.accentColor
 
               RowLayout {
@@ -560,30 +580,35 @@ PanelWindow {
 
                 Icon {
                   name: "crop"
-                  color: root.bgColor
+                  color: Config.bgColor
                   size: 18
                   visible: root.captureMode === "region" && !root.isRegionSelected
                 }
 
                 Icon {
                   name: "camera"
-                  color: root.bgColor
+                  color: Config.bgColor
                   size: 18
                   visible: root.isScreenshotMode && !(root.captureMode === "region" && !root.isRegionSelected)
                 }
 
                 Icon {
                   name: "player-record"
-                  color: root.bgColor
+                  color: Config.bgColor
                   size: 16
                   visible: !root.isScreenshotMode && !(root.captureMode === "region" && !root.isRegionSelected)
                 }
 
                 Text {
-                  text: (root.captureMode === "region" && !root.isRegionSelected) ? "Select Region" : root.isScreenshotMode ? "Capture" : "Start Recording"
+                  text: {
+                    if (root.captureMode === "region" && !root.isRegionSelected) {
+                      return "Select Region";
+                    }
+                    return root.isScreenshotMode ? "Capture" : "Start Recording";
+                  }
                   font.pixelSize: 12
                   font.weight: Font.DemiBold
-                  color: root.bgColor
+                  color: Config.bgColor
                 }
               }
 
@@ -594,105 +619,44 @@ PanelWindow {
               }
             }
 
-            // Annotation Toggle
-            Rectangle {
-              width: 36
-              height: 36
-              radius: 8
+            // Screenshot mode toggles
+            ToggleButton {
+              iconName: "pencil"
+              active: root.includeAnnotation
+              activeColor: Config.ssAccent
               visible: root.isScreenshotMode
-              color: root.includeAnnotation ? root.accentBg(true) : root.surfaceColor
-              border.width: root.includeAnnotation ? 1 : 0
-              border.color: root.ssAccent
-
-              Icon {
-                anchors.centerIn: parent
-                name: "pencil"
-                color: root.includeAnnotation ? root.ssAccent : root.textMuted
-                size: 20
-              }
-
-              MouseArea {
-                anchors.fill: parent
-                cursorShape: Qt.PointingHandCursor
-                onClicked: root.includeAnnotation = !root.includeAnnotation
-              }
+              onClicked: root.includeAnnotation = !root.includeAnnotation
             }
 
-            // Pointer Toggle (Screenshot Mode Only)
-            Rectangle {
-              width: 36
-              height: 36
-              radius: 8
+            ToggleButton {
+              iconName: "mouse"
+              active: root.includePointer
+              activeColor: Config.ssAccent
               visible: root.isScreenshotMode
-              color: root.includePointer ? root.accentBg(true) : root.surfaceColor
-              border.width: root.includePointer ? 1 : 0
-              border.color: root.ssAccent
-
-              Icon {
-                anchors.centerIn: parent
-                name: "mouse"
-                color: root.includePointer ? root.ssAccent : root.textMuted
-                size: 20
-              }
-
-              MouseArea {
-                anchors.fill: parent
-                cursorShape: Qt.PointingHandCursor
-                onClicked: root.includePointer = !root.includePointer
-              }
+              onClicked: root.includePointer = !root.includePointer
             }
 
-            // Mic Toggle (Recording Mode Only)
-            Rectangle {
-              width: 36
-              height: 36
-              radius: 8
+            // Recording mode toggles
+            ToggleButton {
+              iconName: "microphone"
+              active: root.recordMic
+              activeColor: Config.recAccent
               visible: !root.isScreenshotMode
-              color: root.recordMic ? root.accentBg(false) : root.surfaceColor
-              border.width: root.recordMic ? 1 : 0
-              border.color: root.recAccent
-
-              Icon {
-                anchors.centerIn: parent
-                name: "microphone"
-                color: root.recordMic ? root.recAccent : root.textMuted
-                size: 20
-              }
-
-              MouseArea {
-                anchors.fill: parent
-                cursorShape: Qt.PointingHandCursor
-                onClicked: root.recordMic = !root.recordMic
-              }
+              onClicked: root.recordMic = !root.recordMic
             }
 
-            // Audio/System Sound Toggle (Recording Mode Only)
-            Rectangle {
-              width: 36
-              height: 36
-              radius: 8
+            ToggleButton {
+              iconName: "volume"
+              active: root.recordAudio
+              activeColor: Config.recAccent
               visible: !root.isScreenshotMode
-              color: root.recordAudio ? root.accentBg(false) : root.surfaceColor
-              border.width: root.recordAudio ? 1 : 0
-              border.color: root.recAccent
-
-              Icon {
-                anchors.centerIn: parent
-                name: "volume"
-                color: root.recordAudio ? root.recAccent : root.textMuted
-                size: 20
-              }
-
-              MouseArea {
-                anchors.fill: parent
-                cursorShape: Qt.PointingHandCursor
-                onClicked: root.recordAudio = !root.recordAudio
-              }
+              onClicked: root.recordAudio = !root.recordAudio
             }
           }
         }
       }
     }
+
     onActiveFocusChanged: {
       if (!activeFocus && visible && !regionSelector.visible && !isRecordingActive) {
         root.close();

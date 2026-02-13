@@ -46,10 +46,69 @@ PanelWindow {
 
   readonly property bool hasSelection: selW > 4 && selH > 4
 
-  // Colors from Config
-  readonly property color selectionBorderColor: Config.ssAccent
-  readonly property color handleColor: Config.handleColor
-  readonly property color dimTextColor: Config.handleColor
+  // Pre-calculated colors to avoid repeated Qt.rgba calls
+  readonly property color overlayMask: Qt.rgba(Config.overlayColor.r, Config.overlayColor.g, Config.overlayColor.b, Config.overlayAlpha)
+
+  readonly property color dimLabelBg: Qt.rgba(Config.dimLabelBg.r, Config.dimLabelBg.g, Config.dimLabelBg.b, Config.dimLabelAlpha)
+
+  readonly property color instructionTextColor: Qt.rgba(Config.instructionColor.r, Config.instructionColor.g, Config.instructionColor.b, Config.instructionAlpha)
+
+  // Handle positions data model
+  readonly property var handlePositions: [
+    {
+      x: 0,
+      y: 0,
+      cursor: Qt.SizeFDiagCursor
+    }  // TL
+    ,
+    {
+      x: 1,
+      y: 0,
+      cursor: Qt.SizeBDiagCursor
+    }  // TR
+    ,
+    {
+      x: 0,
+      y: 1,
+      cursor: Qt.SizeBDiagCursor
+    }  // BL
+    ,
+    {
+      x: 1,
+      y: 1,
+      cursor: Qt.SizeFDiagCursor
+    }   // BR
+  ]
+
+  // Resize anchor offsets (opposite corners)
+  readonly property var anchorOffsets: [
+    {
+      x: 1,
+      y: 1
+    }  // TL: anchor at BR
+    ,
+    {
+      x: 0,
+      y: 1
+    }  // TR: anchor at BL
+    ,
+    {
+      x: 1,
+      y: 0
+    }  // BL: anchor at TR
+    ,
+    {
+      x: 0,
+      y: 0
+    }   // BR: anchor at TL
+  ]
+
+  // Constants
+  readonly property int defaultSelWidth: 400
+  readonly property int defaultSelHeight: 300
+  readonly property int handleSize: 12
+  readonly property int handleHitArea: 6
+  readonly property int minSelectionSize: 8
 
   function open() {
     isSelecting = false;
@@ -69,23 +128,24 @@ PanelWindow {
   }
 
   function confirmSelection() {
-    if (hasSelection)
+    if (hasSelection) {
       selectionComplete(selX, selY, selW, selH);
+    }
   }
 
   Timer {
     id: defaultSelTimer
-    interval: 1
+    interval: 1  // Next event loop tick
     repeat: false
     onTriggered: {
       const p = root.contentItem;
       if (!p)
         return;
-      const dw = 400, dh = 300;
-      root.selX = Math.floor((p.width - dw) / 2);
-      root.selY = Math.floor((p.height - dh) / 2);
-      root.selW = dw;
-      root.selH = dh;
+
+      root.selX = Math.floor((p.width - defaultSelWidth) / 2);
+      root.selY = Math.floor((p.height - defaultSelHeight) / 2);
+      root.selW = defaultSelWidth;
+      root.selH = defaultSelHeight;
     }
   }
 
@@ -107,12 +167,14 @@ PanelWindow {
                       }
                     }
 
+    // Base overlay
     Rectangle {
       anchors.fill: parent
-      color: Qt.rgba(Config.overlayColor.r, Config.overlayColor.g, Config.overlayColor.b, Config.overlayAlpha)
+      color: root.overlayMask
       z: 0
     }
 
+    // Transparent selection area
     Rectangle {
       x: root.selX
       y: root.selY
@@ -123,43 +185,51 @@ PanelWindow {
       z: 1
     }
 
+    // Top mask
     Rectangle {
       x: 0
       y: 0
       width: overlay.width
       height: root.hasSelection ? root.selY : overlay.height
-      color: Qt.rgba(Config.overlayColor.r, Config.overlayColor.g, Config.overlayColor.b, Config.overlayAlpha)
+      color: root.overlayMask
       z: 2
       visible: root.hasSelection
     }
+
+    // Bottom mask
     Rectangle {
       x: 0
       y: root.hasSelection ? root.selY + root.selH : overlay.height
       width: overlay.width
       height: root.hasSelection ? overlay.height - (root.selY + root.selH) : 0
-      color: Qt.rgba(Config.overlayColor.r, Config.overlayColor.g, Config.overlayColor.b, Config.overlayAlpha)
+      color: root.overlayMask
       z: 2
       visible: root.hasSelection
     }
+
+    // Left mask
     Rectangle {
       x: 0
       y: root.selY
       width: root.hasSelection ? root.selX : 0
       height: root.selH
-      color: Qt.rgba(Config.overlayColor.r, Config.overlayColor.g, Config.overlayColor.b, Config.overlayAlpha)
+      color: root.overlayMask
       z: 2
       visible: root.hasSelection
     }
+
+    // Right mask
     Rectangle {
       x: root.selX + root.selW
       y: root.selY
       width: root.hasSelection ? overlay.width - (root.selX + root.selW) : 0
       height: root.selH
-      color: Qt.rgba(Config.overlayColor.r, Config.overlayColor.g, Config.overlayColor.b, Config.overlayAlpha)
+      color: root.overlayMask
       z: 2
       visible: root.hasSelection
     }
 
+    // Selection border
     Rectangle {
       x: root.selX
       y: root.selY
@@ -168,10 +238,11 @@ PanelWindow {
       visible: root.hasSelection
       color: "transparent"
       border.width: 2
-        border.color: root.selectionBorderColor
+      border.color: Config.ssAccent
       z: 5
     }
 
+    // Dimension label
     Rectangle {
       visible: root.hasSelection
       x: Math.min(Math.max(root.selX + 8, 8), overlay.width - width - 8)
@@ -179,7 +250,7 @@ PanelWindow {
       width: dimText.implicitWidth + 16
       height: 24
       radius: 12
-      color: Qt.rgba(Config.dimLabelBg.r, Config.dimLabelBg.g, Config.dimLabelBg.b, Config.dimLabelAlpha)
+      color: root.dimLabelBg
       z: 10
 
       Text {
@@ -188,78 +259,62 @@ PanelWindow {
         text: root.selW + " × " + root.selH
         font.pixelSize: 12
         font.weight: Font.DemiBold
-        color: root.dimTextColor
+        color: Config.handleColor
       }
     }
 
+    // Instructions
     Text {
       anchors.horizontalCenter: parent.horizontalCenter
       anchors.top: parent.top
       anchors.topMargin: 20
       text: root.hasSelection ? "Drag to move  ·  Corners to resize  ·  Enter to confirm  ·  Esc to cancel" : "Drag to select  ·  Esc to cancel"
       font.pixelSize: 11
-      color: Qt.rgba(Config.instructionColor.r, Config.instructionColor.g, Config.instructionColor.b, Config.instructionAlpha)
+      color: root.instructionTextColor
       z: 10
     }
 
+    // Corner resize handles
     Repeater {
-      model: 4
+      model: root.handlePositions
+
       delegate: Rectangle {
+        required property var modelData
         required property int index
 
-        readonly property int hx: {
-          if (index === 0 || index === 2)
-            return root.selX;
-          return root.selX + root.selW;
-        }
-        readonly property int hy: {
-          if (index === 0 || index === 1)
-            return root.selY;
-          return root.selY + root.selH;
-        }
+        readonly property int hx: modelData.x === 0 ? root.selX : root.selX + root.selW
+        readonly property int hy: modelData.y === 0 ? root.selY : root.selY + root.selH
 
-        x: hx - 6
-        y: hy - 6
-        width: 12
-        height: 12
-        radius: 6
+        x: hx - root.handleSize / 2
+        y: hy - root.handleSize / 2
+        width: root.handleSize
+        height: root.handleSize
+        radius: root.handleSize / 2
         visible: root.hasSelection && !root.isSelecting
-        color: root.handleColor
+        color: Config.handleColor
         border.width: 2
-        border.color: root.selectionBorderColor
+        border.color: Config.ssAccent
         z: 12
-
-        readonly property int diagCursor: (index === 0 || index === 3) ? Qt.SizeFDiagCursor : Qt.SizeBDiagCursor
 
         MouseArea {
           anchors {
             fill: parent
-            margins: -6
+            margins: -root.handleHitArea
           }
-          cursorShape: parent.diagCursor
+          cursorShape: modelData.cursor
           hoverEnabled: true
 
           onPressed: mouse => {
                        root.isResizing = true;
-                       root.activeHandle = parent.index;
+                       root.activeHandle = index;
 
-                       if (parent.index === 0) {
-                         root.resizeAnchorX = root.selX + root.selW;
-                         root.resizeAnchorY = root.selY + root.selH;
-                       } else if (parent.index === 1) {
-                         root.resizeAnchorX = root.selX;
-                         root.resizeAnchorY = root.selY + root.selH;
-                       } else if (parent.index === 2) {
-                         root.resizeAnchorX = root.selX + root.selW;
-                         root.resizeAnchorY = root.selY;
-                       } else {
-                         root.resizeAnchorX = root.selX;
-                         root.resizeAnchorY = root.selY;
-                       }
+                       const offset = root.anchorOffsets[index];
+                       root.resizeAnchorX = root.selX + offset.x * root.selW;
+                       root.resizeAnchorY = root.selY + offset.y * root.selH;
                      }
 
           onPositionChanged: mouse => {
-                               if (!root.isResizing || root.activeHandle !== parent.index)
+                               if (!root.isResizing || root.activeHandle !== index)
                                return;
 
                                const pt = mapToItem(overlay, mouse.x, mouse.y);
@@ -272,7 +327,7 @@ PanelWindow {
                                const nw = Math.abs(pt.x - ax);
                                const nh = Math.abs(pt.y - ay);
 
-                               if (nw >= 8 && nh >= 8) {
+                               if (nw >= root.minSelectionSize && nh >= root.minSelectionSize) {
                                  root.selX = nx;
                                  root.selY = ny;
                                  root.selW = nw;
@@ -288,6 +343,7 @@ PanelWindow {
       }
     }
 
+    // Main interaction area
     MouseArea {
       anchors.fill: parent
       acceptedButtons: Qt.LeftButton | Qt.RightButton
@@ -299,8 +355,9 @@ PanelWindow {
           return Qt.CrossCursor;
         if (root.isMoving)
           return Qt.ClosedHandCursor;
-        if (root.hasSelection && mouseX >= root.selX && mouseX <= root.selX + root.selW && mouseY >= root.selY && mouseY <= root.selY + root.selH)
+        if (root.hasSelection && mouseX >= root.selX && mouseX <= root.selX + root.selW && mouseY >= root.selY && mouseY <= root.selY + root.selH) {
           return Qt.OpenHandCursor;
+        }
         return Qt.CrossCursor;
       }
 
@@ -314,6 +371,7 @@ PanelWindow {
       onPressed: mouse => {
                    if (mouse.button !== Qt.LeftButton || root.isResizing)
                    return;
+
                    const inSel = root.hasSelection && mouse.x >= root.selX && mouse.x <= root.selX + root.selW && mouse.y >= root.selY && mouse.y <= root.selY + root.selH;
 
                    if (inSel) {

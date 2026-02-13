@@ -19,13 +19,14 @@ Item {
     source: "icons/" + root.name + ".svg"
     sourceSize: Qt.size(root.size, root.size)
     smooth: true
+    visible: false  // Hidden - only the effect is visible
   }
 
   MultiEffect {
     anchors.fill: iconImage
     source: iconImage
-    brightness: 1
-    colorization: 1
+    colorization: 1.0
+    brightness: 1.0
     colorizationColor: root.color
   }
 }
