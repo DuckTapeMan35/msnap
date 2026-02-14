@@ -237,14 +237,20 @@ PanelWindow {
   RegionSelector {
     id: regionSelector
 
-    onSelectionComplete: (x, y, w, h) => {
+    onSelectionComplete: (x, y, w, h, quick) => {
                            selectedX = x;
                            selectedY = y;
                            selectedWidth = w;
                            selectedHeight = h;
                            isRegionSelected = true;
                            regionSelector.close();
-                           root.visible = true;
+
+                           if (quick) {
+                             root.visible = false;
+                             root.executeAction();
+                           } else {
+                             root.visible = true;
+                           }
                          }
 
     onCancelled: root.visible = true
