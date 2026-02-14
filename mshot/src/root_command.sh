@@ -34,7 +34,7 @@ if [[ $window_capture == true ]]; then
 elif [[ ${args[--geometry]} ]]; then
   cmd="$cmd -g \"${args[--geometry]}\""
 elif [[ ${args[--region]} ]]; then
-  cmd="$cmd -g \"\$(slurp -d)\""
+  cmd="slurp -d | $cmd -g-"
 fi
 
 cmd="$cmd \"$filepath\""

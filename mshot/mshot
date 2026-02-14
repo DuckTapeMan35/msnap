@@ -48,7 +48,7 @@ root_command() {
   elif [[ ${args[--geometry]} ]]; then
     cmd="$cmd -g \"${args[--geometry]}\""
   elif [[ ${args[--region]} ]]; then
-    cmd="$cmd -g \"\$(slurp -d)\""
+    cmd="slurp -d | $cmd -g-"
   fi
 
   cmd="$cmd \"$filepath\""
