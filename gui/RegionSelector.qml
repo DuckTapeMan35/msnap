@@ -7,6 +7,8 @@ PanelWindow {
 
   screen: Quickshell.screens[0]
 
+  readonly property real scaleFactor: screen ? screen.devicePixelRatio : 1.0
+
   anchors.top: true
   anchors.left: true
   anchors.right: true
@@ -129,7 +131,7 @@ PanelWindow {
 
   function confirmSelection() {
     if (hasSelection) {
-      selectionComplete(selX, selY, selW, selH);
+      selectionComplete(Math.round(selX * scaleFactor), Math.round(selY * scaleFactor), Math.round(selW * scaleFactor), Math.round(selH * scaleFactor));
     }
   }
 
@@ -256,7 +258,7 @@ PanelWindow {
       Text {
         id: dimText
         anchors.centerIn: parent
-        text: root.selW + " × " + root.selH
+        text: Math.round(root.selW * root.scaleFactor) + " × " + Math.round(root.selH * root.scaleFactor) + " px"
         font.pixelSize: 12
         font.weight: Font.DemiBold
         color: Config.handleColor
