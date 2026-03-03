@@ -345,16 +345,15 @@ notify_saved() {
   local type="$3"
   local skip_annotate="${4:-}"
 
-  local app title icon
+  local title icon
   if [[ "$type" == "shot" ]]; then
-    app="msnap-shot"
     title="Screenshot saved"
     icon="$fp"
   else
-    app="msnap-cast"
     title="Recording saved"
     icon="video-x-generic"
   fi
+  local app="msnap"
 
   local notify_actions=(-A "open=Open File" -A "folder=Open Folder")
   [[ "$type" == "shot" && -z "${args[--annotate]}" && -z "$skip_annotate" ]] \
@@ -458,7 +457,7 @@ msnap_shot_command() {
   if [[ ${args[--only-copy]} ]]; then
     wl-copy < "$filepath"
     notify-send "Screenshot captured" "Image copied to the clipboard." \
-      -i "$filepath" -a msnap-shot
+      -i "$filepath" -a msnap
   else
     if [[ ! ${args[--no-copy]} ]]; then
       wl-copy < "$filepath"
