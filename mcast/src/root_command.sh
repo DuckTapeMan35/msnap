@@ -63,7 +63,6 @@ if [[ -n "$toggle_mode" ]]; then
     build_cmd
     "${cmd[@]}" > /dev/null 2>&1 &
     echo $! > "$recording_pid_file"
-    notify-send "Recording started" "Recording to <i>${filepath}</i>." -a mcast
   fi
 else
   filename="$(date +"$filename_pattern")"
