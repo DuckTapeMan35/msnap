@@ -7,16 +7,15 @@ notify_saved() {
   local type="$3"
   local skip_annotate="${4:-}"
 
-  local app title icon
+  local title icon
   if [[ "$type" == "shot" ]]; then
-    app="msnap-shot"
     title="Screenshot saved"
     icon="$fp"
   else
-    app="msnap-cast"
     title="Recording saved"
     icon="video-x-generic"
   fi
+  local app="msnap"
 
   local notify_actions=(-A "open=Open File" -A "folder=Open Folder")
   [[ "$type" == "shot" && -z "${args[--annotate]}" && -z "$skip_annotate" ]] \

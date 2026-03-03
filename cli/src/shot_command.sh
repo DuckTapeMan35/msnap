@@ -61,7 +61,7 @@ fi
 if [[ ${args[--only-copy]} ]]; then
   wl-copy < "$filepath"
   notify-send "Screenshot captured" "Image copied to the clipboard." \
-    -i "$filepath" -a msnap-shot
+    -i "$filepath" -a msnap
 else
   if [[ ! ${args[--no-copy]} ]]; then
     wl-copy < "$filepath"
