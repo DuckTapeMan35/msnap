@@ -31,13 +31,14 @@ build_cmd() {
 
 notify_saved() {
   local fp="$1"
+  local action
   action=$(notify-send "Recording saved" "Recording saved in <i>${fp}</i>." \
     -a mcast \
     -A "open=Open File" \
     -A "folder=Open Folder")
   case "$action" in
-    open)   xdg-open "$fp" ;;
-    folder) xdg-open "$(dirname "$fp")" ;;
+    open)   xdg-open "$fp" >/dev/null 2>&1 ;;
+    folder) xdg-open "$(dirname "$fp")" >/dev/null 2>&1 ;;
   esac
 }
 
@@ -46,6 +47,7 @@ if [[ -n "$toggle_mode" ]]; then
     pid=$(<"$recording_pid_file")
     if kill -0 "$pid" 2>/dev/null; then
       kill -2 "$pid"
+      wait "$pid" 2>/dev/null || true
     fi
     rm -f "$recording_pid_file"
     if [[ -f "$recording_filepath_file" ]]; then
@@ -61,6 +63,7 @@ if [[ -n "$toggle_mode" ]]; then
     build_cmd
     "${cmd[@]}" > /dev/null 2>&1 &
     echo $! > "$recording_pid_file"
+    notify-send "Recording started" "Recording to <i>${filepath}</i>." -a mcast
   fi
 else
   filename="$(date +"$filename_pattern")"

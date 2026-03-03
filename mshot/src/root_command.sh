@@ -12,7 +12,7 @@ fi
 cmd=(grim)
 
 use_pointer=""
-[[ ${ini[pointer_default]} == true ]] || [[ ${args[--pointer]} ]] && use_pointer=true
+{ [[ ${ini[pointer_default]} == true ]] || [[ ${args[--pointer]} ]]; } && use_pointer=true
 [[ $use_pointer ]] && cmd+=(-c)
 
 if [[ ${args[--window]} ]]; then
@@ -27,21 +27,28 @@ elif [[ ${args[--geometry]} ]]; then
 fi
 
 if [[ ${args[--freeze]} ]]; then
-  cursor_flag=""
-  [[ -z $use_pointer ]] && cursor_flag="--hide-cursor"
+  wayfreeze_cmd=(wayfreeze)
+  [[ -z $use_pointer ]] && wayfreeze_cmd+=(--hide-cursor)
   if [[ ${args[--region]} ]]; then
-    wayfreeze $cursor_flag & PID=$!
+    "${wayfreeze_cmd[@]}" & PID=$!
     sleep .1
-    slurp -d | "${cmd[@]}" -g- "$filepath"
+    geometry=$(slurp -d)
+    if [[ -z "$geometry" ]]; then
+      kill $PID 2>/dev/null || true
+      exit 1
+    fi
+    "${cmd[@]}" -g "$geometry" "$filepath"
     kill $PID 2>/dev/null || true
   else
-    wayfreeze $cursor_flag & PID=$!
+    "${wayfreeze_cmd[@]}" & PID=$!
     sleep .1
     "${cmd[@]}" "$filepath"
     kill $PID 2>/dev/null || true
   fi
 elif [[ ${args[--region]} ]]; then
-  slurp -d | "${cmd[@]}" -g- "$filepath"
+  geometry=$(slurp -d)
+  [[ -z "$geometry" ]] && exit 1
+  "${cmd[@]}" -g "$geometry" "$filepath"
 else
   "${cmd[@]}" "$filepath"
 fi
@@ -55,18 +62,19 @@ notify_saved() {
   local fp="$1"
   local msg="$2"
   local notify_actions=(-A "open=Open File" -A "folder=Open Folder")
-  [[ ! ${args[--annotate]} ]] && notify_actions+=(-A "annotate=Annotate")
+  [[ -z "${args[--annotate]}" ]] && notify_actions+=(-A "annotate=Annotate")
 
+  local action
   action=$(notify-send "Screenshot saved" "$msg" \
     -i "$fp" -a mshot \
     "${notify_actions[@]}")
 
   case "$action" in
     open)
-      xdg-open "$fp"
+      xdg-open "$fp" >/dev/null 2>&1
       ;;
     folder)
-      xdg-open "$(dirname "$fp")"
+      xdg-open "$(dirname "$fp")" >/dev/null 2>&1
       ;;
     annotate)
       satty --filename "$fp" --output-filename "$fp" \
