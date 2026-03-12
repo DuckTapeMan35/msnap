@@ -1,0 +1,8 @@
+[Desktop Entry]
+Name=msnap
+Comment=screenshot and screencast utility for mangowm
+Exec=qs -p @GUI_PATH@
+Icon=msnap
+Terminal=false
+Type=Application
+Categories=Utility;
