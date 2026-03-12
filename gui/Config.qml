@@ -51,19 +51,9 @@ Singleton {
   property int _configSearchIndex: 0
   property string configPath: configSearchDirs[0] + "/msnap/gui.conf"
 
-  // Find msnap binary: user install first, then system
-  readonly property string msnapPath: {
-    // User install
-    if (FileUtils.exists(xdgBinHome + "/msnap"))
-        return xdgBinHome + "/msnap";
-    
-    // System install
-    if (FileUtils.exists("/usr/bin/msnap"))
-        return "/usr/bin/msnap";
-    
-    // Fallback to user install path
-    return xdgBinHome + "/msnap";
-  }
+  // The path to the msnap binary (injected at build time by the Makefile)
+  // Fallback to "msnap" so it works via $PATH during local development testing
+  readonly property string msnapPath: "@BIN_PATH@" === "@" + "BIN_PATH@" ? "msnap" : "@BIN_PATH@"
   
   readonly property string pidFilePath: "/tmp/msnap-cast.pid"
 
