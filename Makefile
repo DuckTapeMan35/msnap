@@ -2,14 +2,14 @@ PREFIX ?= /usr/local
 DESTDIR ?=
 BINDIR ?= $(PREFIX)/bin
 DATADIR ?= $(PREFIX)/share
-SYSCONFDIR ?= /etc
+SYSCONFDIR ?= /etc/xdg
 
 # Installation Directories
 APP_DIR = $(DESTDIR)$(DATADIR)/msnap
 GUI_DIR = $(APP_DIR)/gui
 ICON_DIR = $(DESTDIR)$(DATADIR)/icons/hicolor/scalable/apps
 DESKTOP_DIR = $(DESTDIR)$(DATADIR)/applications
-CONFIG_DIR = $(DESTDIR)$(SYSCONFDIR)/xdg/msnap
+CONFIG_DIR = $(DESTDIR)$(SYSCONFDIR)/msnap
 
 .PHONY: all install uninstall clean
 
