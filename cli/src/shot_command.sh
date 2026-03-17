@@ -1,6 +1,6 @@
 if [[ ${args[--only-copy]} ]]; then
-  filepath="$(mktemp --suffix=.png)"
-  trap 'rm -f "$filepath"' EXIT
+  filepath="$(mktemp -t msnap-XXXXXX.png)"
+  find "$(dirname "$filepath")" -maxdepth 1 -name "msnap-*.png" -mmin +5 -delete 2>/dev/null &
 else
   output_dir="${args[--output]:-${ini[shot_output_dir]:-${XDG_PICTURES_DIR:-$HOME/Pictures}/Screenshots}}"
   filename_pattern="${args[--filename]:-${ini[shot_filename_pattern]:-%Y%m%d%H%M%S.png}}"
